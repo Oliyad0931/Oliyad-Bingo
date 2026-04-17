@@ -1,1 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oliyad Bingo</title>
+    <style>
+        :root {
+            --bg: #0e0f12; /* Dark background */
+            --card-bg: #141518; /* Darker card background */
+            --accent: #f0b429; /* Gold accent */
+            --muted: #9aa0a6; /* Muted text color */
+            --btn-bg: #ffd54a; /* Button background */
+            --red: #e53935; /* Red for selected/rejected */
+            --green: #43a047; /* Green for approved/winning */
+            --border-dark: #222; /* Dark border */
+            --btn-hover: #e6c35f;
+            --card-hover: #1e2024;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e6e7e8;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1024px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-dark);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            color: var(--bg);
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .site-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .site-subtitle {
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn, .ghost-btn, .copy-btn, .approve-btn, .dismiss-btn {
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-size: 14px;
+        }        .btn {
+            background-color: var(--btn-bg);
+            color: var(--bg);
+        }
+        .ghost-btn {
+            background-color: transparent;
+            border: 1px solid var(--border-dark);
+            color: #fff;
+        }
+        .copy-btn {
+            background-color: var(--border-dark);
+            color: #fff;
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        .approve-btn { background-color: var(--green); color: var(--bg); }
+        .dismiss-btn { background-color: var(--red); color: #fff; }
+        .btn:hover, .ghost-btn:hover, .card-link:hover, .card-link-disabled:hover { opacity: 0.9; }
+        .card-link, .card-link-disabled {
+            display: block;
+            background: var(--card-bg);
+            padding: 12px 15px;
+            border-radius: 8px;
+            text-align: center;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: all 0.2s ease;
+        }
+        .card-link:hover { transform: translateY(-4px); }
+        .card-link-disabled { background: var(--card-bg); opacity: 0.6; cursor: not-allowed; }
+        .card-link-selected { border: 2px solid var(--accent); }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .panel {
+            background: var(--card-bg);
+            padding: 18px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .small-text { font-size: 12px; color: var(--muted); }
+        .important-text { color: var(--accent); font-weight: bold; }
+        .instructions { color: var(--muted); font-size: 13px; margin-top: 10px; }
 
+        /* Modals */
+        .modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 10px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            position: relative;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-dark);
+        }
+        .modal-header h3 { margin: 0; font-size: 20px; color: var(--accent); }
+        .close-modal {
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--muted);
+        }
+        .modal-field { margin-bottom: 15px; }
+        .modal-field input, .modal-field textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-dark);
+            background: var(--bg);
+            color: #fff;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .modal-field input::placeholder, .modal-field textarea::placeholder { color: var(--muted); }
+        .modal-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }.modal-success, .modal-danger {
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+            display: none; /* Hidden by default */
+        }
+        .modal-success { background-color: var(--green); color: var(--bg); }
+        .modal-danger { background-color: var(--red); color: #fff; }
+
+        /* Admin Dashboard Styles */
+        .admin-dashboard { display: none; /* Hidden by default */ }
+        .admin-dashboard h3 { color: var(--accent); }
+        .admin-dashboard table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .admin-dashboard th, .admin-dashboard td {
+            border: 1px solid var(--border-dark);
+            padding: 10px;
+            text-align: left;
+        }
+        .admin-dashboard th { background-color: var(--card-bg); color: var(--accent); }
+        .admin-dashboard tr:nth-child(even) { background-color: var(--card-bg); }
+        .admin-dashboard .user-info { color: var(--accent); font-weight: bold; }
+        .admin-dashboard .action-buttons button { margin-right: 5px; }
+
+        /* Wallet Balance Styles */
+        .wallet-balance { display: none; background: var(--card-bg); padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .wallet-balance span { font-weight: bold; color: var(--accent); }
+
+        /* Deposit/Withdrawal Section */
+        .transaction-section { margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-dark); }
+        .transaction-section h4 { margin-top: 0; color: var(--accent); }
+        .transaction-section .deposit-box, .transaction-section .withdraw-box {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .transaction-section .field input, .transaction-section .field textarea { border: 1px solid #333; }
+        .transaction-section .copy-btn { margin-left: 10px; }
+        .transaction-section .submit-btn { margin-top: 15px; }
+        .transaction-section .copy-message { color: var(--accent); font-size: 13px; margin-top: 10px; }
+        .transaction-section .wallet-tip { color: var(--muted); font-size: 12px; margin-top: 5px; }
+        .balance-update-message { display: none; color: var(--green); margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="brand">
+                <div class="logo">OB</div>
+                <div>
+                    <div class="site-title">Oliyad Bingo</div>
+                    <div class="site-subtitle">Play. Deposit. Win.</div>
+                </div>
+            </div>
+            <div class="controls">
+                <div id="welcomeText" class="small-text">Not signed in</div>
+                <button class="btn" id="openRegBtn">Register</button>
+                <button class="ghost-btn" id="openLoginBtn">Login</button>
+                <button class="ghost-btn" id="openDepositBtn">Manual Deposit</button>
+                <button class="ghost-btn" id="adminBtn" style="border-color: var(--red); color: var(--red);">Admin</button>
+            </div>
+        </header>
+
+        <div class="panel">
+            <div class="panel-header">
+                Choose Your Bingo Card
+                <span class="small-text">Select card 1-30. One card per user. Game starts with 2+ players.</span>
+            </div>
+            <div class="cards-grid" id="cardsGrid">
+                <!-- Bingo card buttons will be generated here -->
+            </div>
+            <p class="instructions">
+                <strong>How to Play:</strong>
+                1. Register/Login.
+                2. Select a Bingo Card (1-30). Once selected, it's reserved.
+                3. Wait for 2+ players. Game starts automatically in 30 seconds.
+                4. Numbers are auto-marked. Win by completing a line.
+                5. Cost: 10 ETB + 2 ETB fee per user. Winnings added to balance.
+            </p>
+        </div>
+
+        <div class="wallet-balance panel">
+            Your Wallet Balance: <span id="userBalance">0</span> ETB
+        </div>
+
+        <!-- Transaction Section -->
+        <div class="transaction-section">
+            <div class="deposit-box">
+                <h4>Deposit Funds</h4>
+                <div class="field">
+                    <label for="depositMethod">Select Method:</label><br>
+                    <select id="depositMethod" class="modal-field">
+                        <option value="telebirr">Telebirr</option>
+                        <option value="cbe">CBE Birr</option>
+                        <option value="abyssinia">Abyssinia Bank</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="depositAmount">Amount (ETB):</label><br>
+                    <input type="number" id="depositAmount" placeholder="Enter amount" value="10">
+                </div>
+                <div class="field">
+                    <label for="depositTxn">Transaction ID / Message:</label><br>
+                    <input type="text" id="depositTxn" placeholder="Paste your transaction ID or message">
+                </div>
+                <button class="btn submit-btn" id="submitDepositBtn">Submit Deposit Request</button>
+                <div class="balance-update-message">Deposit request submitted. Waiting for admin approval.</div>
+                <div class="wallet-tip">After submitting, use the Copy buttons below to get account details for manual transfer.</div>
+            </div>
+
+            <div class="transaction-section">
+                <h4>Account Details for Transfer</h4>
+                <div class="field" id="telebirrDetail">
+                    <strong>Telebirr:</strong> <span id="teleNum">0967692398</span>
+                    <button class="copy-btn" onclick="copyToClipboard('0967692398')">COPY</button>
+                    <span class="small-text">(Oliyad Tefera)</span>
+                </div>
+                <div class="field" id="cbeDetail">
+                    <strong>CBE Birr:</strong> <span id="cbeNum">0931517482</span>
+                    <button class="copy-btn" onclick="copyToClipboard('0931517482')">COPY</button>
+                    <span class="small-text">(Oliyad Tefera)</span>
+                </div>
+                 <div class="field" id="abyssiniaDetail" style="display: none;">
+                    <strong>Abyssinia Bank:</strong> <span id="abyssiniaNum">1000438187937</span>
+                    <button class="copy-btn" onclick="copyToClipboard('1000438187937')">COPY</button>
+                    <span class="small-text">(Oliyad Tefera)</span>
+                </div>
+            </div>
+        </div>
+
+        <footer>Oliyad Bingo - Play Responsibly. All rights reserved.</footer>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-backdrop" id="modalBack">
+        <div class="modal-content" id="modalContent"></div>
+    </div>
+
+    <script>
+        // =====================================================
+        //                  CONFIGURATION (Customize Here)
+        // =====================================================
+        const gameConfig = {
+            costPerCard: 10, // ETB
+            feePerUser: 2,   // ETB
+            maxPlayersPerGame: 30, // Max users per game instance
+            minPlayersToStart: 2,
+            autoStartDelay: 30, // Seconds after min players reached
+            cardLinks: [
+                "https://mfbc.us/m/qb5rxc/1", "https://mfbc.us/m/qb5rxc/2", "https://mfbc.us/m/qb5rxc/3",
+                "https://mfbc.us/m/qb5rxc/4", "https://mfbc.us/m/qb5rxc/5", "https://mfbc.us/m/qb5rxc/6",
+                "https://mfbc.us/m/qb5rxc/7", "https://mfbc.us/m/qb5rxc/8", "https://mfbc.us/m/qb5rxc/9",
+                "https://mfbc.us/m/qb5rxc/10", "https://mfbc.us/m/qb5rxc/11", "https://mfbc.us/m/qb5rxc/12",
+                "https://mfbc.us/m/qb5rxc/13", "https://mfbc.us/m/qb5rxc/14", "https://mfbc.us/m/qb5rxc/15",
+                "https://mfbc.us/m/qb5rxc/16", "https://mfbc.us/m/qb5rxc/17", "https://mfbc.us/m/qb5rxc/18",
+                "https://mfbc.us/m/qb5rxc/19", "https://mfbc.us/m/qb5rxc/20", "https://mfbc.us/m/qb5rxc/21",
+                "https://mfbc.us/m/qb5rxc/22", "https://mfbc.us/m/qb5rxc/23", "https://mfbc.us/m/qb5rxc/24",
+                "https://mfbc.us/m/qb5rxc/25", "https://mfbc.us/m/qb5rxc/26", "https://mfbc.us/m/qb5rxc/27",
+                "https://mfbc.us/m/qb5rxc/28", "https://mfbc.us/m/qb5rxc/29", "https://mfbc.us/m/qb5rxc/30"
+            ],
+            paymentDetails: {
+                telebirr: { number: "0967692398", name: "Oliyad Tefera" },
+                cbe: { number: "0931517482", name: "Oliyad Tefera" },
+                abyssinia: { number: "1000438187937", name: "Oliyad Tefera" }
+            },
+            googleSheetUrl: "https://docs.google.com/spreadsheets/d/1ima1yeJv7n2r_6eYjh8EtB0LD28Jt_yKER5Ocr2-FpI/edit?usp=drivesdk"
+        };
+        // =====================================================
+
+        // Local Storage Keys
+        const USERS_KEY = "oliyad_users_v2";
+        const SESSION_KEY = "oliyad_session_v2";
+        const DEPOSITS_KEY = "oliyad_deposits_v2";
+        const ADMIN_DATA_KEY = "oliyad_admin_data_v2"; // For admin balance and user management
+
+        // Game State Variables
+        let currentUser = null;
+        let availableCards = [];
+        let selectedCard = null;
+        let activeGame = null; // { id, players: [{user, cardId}], numbersCalled: [], startTime, timer }
+        let gamePlayers = []; // Cache of all registered users for admin display
+        let adminData = { balance: 1000000000, users: [] }; // Admin wallet, user list for admin
+        let userDeposits = []; // Cache for deposit requests
+
+        // DOM Elements
+        const welcomeText = document.getElementById("welcomeText");
+        const openRegBtn = document.getElementById("openRegBtn");
+        const openLoginBtn = document.getElementById("openLoginBtn");
+        const openDepositBtn = document.getElementById("openDepositBtn");
+        const adminBtn = document.getElementById("adminBtn");
+        const cardsGrid = document.getElementById("cardsGrid");
+        const userBalanceDisplay = document.getElementById("userBalance");
+        const depositMethod = document.getElementById("depositMethod");
+        const depositAmount = document.getElementById("depositAmount");
+        const depositTxn = document.getElementById("depositTxn");
+        const submitDepositBtn = document.getElementById("submitDepositBtn");
+        const balanceUpdateMessage = document.querySelector(".balance-update-message");
+        const modalBack = document.getElementById("modalBack");
+        const modalContent = document.getElementById("modalContent");
+
+        // Payment Detail Display
+        const telebirrDetail = document.getElementById("telebirrDetail");
+        const cbeDetail = document.getElementById("cbeDetail");
+        const abyssiniaDetail = document.getElementById("abyssiniaDetail");
+        document.getElementById("teleNum").textContent = gameConfig.paymentDetails.telebirr.number;
+        document.getElementById("telebirrDetail").querySelector(".small-text").textContent = `(${gameConfig.paymentDetails.telebirr.name})`;
+        document.getElementById("cbeNum").textContent = gameConfig.paymentDetails.cbe.number;
+        document.getElementById("cbeDetail").querySelector(".small-text").textContent = `(${gameConfig.paymentDetails.cbe.name})`;
+        document.getElementById("abyssiniaNum").textContent = gameConfig.paymentDetails.abyssinia.number;
+        document.getElementById("abyssiniaDetail").querySelector(".small-text").textContent = `(${gameConfig.paymentDetails.abyssinia.name})`;
+        document.getElementById("abyssiniaDetail").style.display = "block"; // Show Abyssinia as per instructions
+
+        // Initialize all data from localStorage
+        function initializeData() {
+            adminData = JSON.parse(localStorage.getItem(ADMIN_DATA_KEY)) || { balance: 1000000000, users: [], deposits: [], games: [] };
+            userDeposits = JSON.parse(localStorage.getItem(DEPOSITS_KEY)) || [];
+            currentUser = getCurrentUser();
+            updateWelcome();
+            loadUserBalance();
+            updateDepositDetailsVisibility();
+            if (currentUser) {
+                // Load user's selected card if any
+                const userSession = JSON.parse(localStorage.getItem(SESSION_KEY));
+                if (userSession && userSession.selectedCardId) {
+                    selectedCard = userSession.selectedCardId;
+                }
+            }
+        }
+
+        // =====================================================
+        //                  MODAL FUNCTIONS
+        // =====================================================
+        function showModal(html) {
+            modalContent.innerHTML = "";
+            modalContent.appendChild(html);
+            modalBack.style.display = "flex";
+        }
+
+        function closeModal() {
+            modalBack.style.display = "none";
+            modalContent.innerHTML = "";
+        }
+        modalBack.addEventListener("click", (e) => { if (e.target === modalBack) closeModal(); });
+
+        // Registration Modal
+        function regModalContent() {
+            const cont = document.createElement("div");
+            cont.innerHTML = `
+                <h3>Register</h3>
+                <div class="modal-field"><input id="regName" placeholder="Full name"></div>
+                <div class="modal-field"><input id="regPhone" placeholder="Phone number"></div>
+                <div class="modal-field"><input id="regEmail" placeholder="Email (for login)"></div>
+                <div class="modal-field"><input id="regPass" placeholder="Password" type="password"></div>
+                <div class="modal-row">
+                    <button class="ghost-btn" id="regCancel">Cancel</button>
+                    <button class="btn" id="regSubmit">Create Account</button>
+                </div>
+                <div class="modal-danger" id="regError" style="display: none;"></div>
+                <div class="modal-success" id="regSuccess" style="display: none;">Registered successfully! Please login.</div>
+                <div class="small-text">Your data is stored locally in your browser.</div>
+            `;
+            setTimeout(() => {
+                cont.querySelector("#regCancel").onclick = closeModal;
+                cont.querySelector("#regSubmit").onclick = () => {
+                    const name = cont.querySelector("#regName").value.trim();
+                    const phone = cont.querySelector("#regPhone").value.trim();
+                    const email = cont.querySelector("#regEmail").value.trim().toLowerCase();
+                    const pass = cont.querySelector("#regPass").value;
+                    const regError = cont.querySelector("#regError");
+                    const regSuccess = cont.querySelector("#regSuccess");
+
+                    if (!name || !phone || !email || !pass) {
+                        regError.textContent = "Please fill all fields.";
+                        regError.style.display = "block";
+                        return;
+                    }
+                    if (!validateEmail(email)) {
+                        regError.textContent = "Please enter a valid email address.";
+                        regError.style.display = "block";
+                        return;
+                    }
+
+                    let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+                    if (users.some(u => u.email === email)) {
+                        regError.textContent = "Email already registered. Please try logging in.";
+                        regError.style.display = "block";
+                        return;
+                    }
+
+                    users.push({ id: Date.now(), name, phone, email, pass, balance: 10, registrationDate: Date.now() }); // 10 ETB bonus
+                    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+                    regSuccess.style.display = "block";
+                    regError.style.display = "none";
+                    setTimeout(() => { closeModal(); alert("Registration successful! Please login."); }, 1500);
+                };
+            }, 50);
+            return cont;
+        }
+
+        // Login Modal
+        function loginModalContent() {
+            const cont = document.createElement("div");
+            cont.innerHTML = `
+                <h3>Login</h3>
+                <div class="modal-field"><input id="logEmail" placeholder="Email"></div>
+                <div class="modal-field"><input id="logPass" placeholder="Password" type="password"></div>
+                <div class="modal-row">
+                    <button class="ghost-btn" id="logCancel">Cancel</button>
+                    <button class="btn" id="logSubmit">Login</button>
+                </div>
+                <div class="modal-danger" id="logError" style="display: none;"></div>
+                <div class="modal-success" id="logSuccess" style="display: none;">Login successful.</div>
+                <div class="small-text">Need an account? Please Register first.</div>
+            `;
+            setTimeout(() => {
+                cont.querySelector("#logCancel").onclick = closeModal;
+                cont.querySelector("#logSubmit").onclick = () => {
+                    const email = cont.querySelector("#logEmail").value.trim().toLowerCase();
+                    const pass = cont.querySelector("#logPass").value;
+                    const logError = cont.querySelector("#logError");
+                    const logSuccess = cont.querySelector("#logSuccess");
+
+                    let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+                    const foundUser = users.find(u => u.email === email && u.pass === pass);
+
+                    if (!foundUser) {
+                        logError.textContent = "Invalid email or password.";
+                        logError.style.display = "block";
+                        return;
+                    }
+
+                    currentUser = { ...foundUser }; // Shallow copy
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+                    updateWelcome();
+                    loadUserBalance();
+                    updateCardAvailability();
+                    logSuccess.style.display = "block";
+                    logError.style.display = "none";
+                    setTimeout(() => { closeModal(); }, 1000);
+                };
+            }, 50);
+            return cont;
+        }
+
+        // Deposit Modal
+        function depositModalContent() {
+            const cont = document.createElement("div");
+            cont.innerHTML = `
+                <h3>Manual Deposit</h3>
+                <div class="modal-field">
+                    <label for="depositMethodModal">Select Method:</label><br>
+                    <select id="depositMethodModal" class="modal-field">
+                        <option value="telebirr">Telebirr</option>
+                        <option value="cbe">CBE Birr</option>
+                        <option value="abyssinia">Abyssinia Bank</option>
+                    </select>
+                </div>
+                <div class="modal-field">
+                    <label for="depositAmountModal">Amount (ETB):</label><br>
+                    <input type="number" id="depositAmountModal" placeholder="Enter amount" value="10" min="10">
+                </div>
+                <div class="modal-field">
+                    <label for="depositTxnModal">Transaction ID / Message:</label><br>
+                    <input type="text" id="depositTxnModal" placeholder="Paste your transaction ID">
+                </div>
+                <div class="modal-field">
+                    <label>Account Details:</label><br>
+                    <div id="modalPaymentDetails"></div>
+                </div>
+                <div class="modal-row">
+                    <button class="ghost-btn" id="depCancel">Cancel</button>
+                    <button class="btn" id="depSubmit">Submit Request</button>
+                </div>
+                <div class="modal-success" id="depSuccess" style="display: none;">Request submitted. Waiting for admin approval.</div>
+                <div class="modal-danger" id="depError" style="display: none;"></div>
+                <div class="small-text">After submitting, use Copy buttons to get account details for manual transfer. Admin must approve manually.</div>
+            `;
+
+            const depositMethodModal = cont.querySelector("#depositMethodModal");
+            const modalPaymentDetails = cont.querySelector("#modalPaymentDetails");
+
+            function updatePaymentDetailsDisplay() {
+                const method = depositMethodModal.value;
+                const details = gameConfig.paymentDetails[method];
+                modalPaymentDetails.innerHTML = `
+                    <div>
+                        <strong>${method === 'telebirr' ? 'Telebirr' : method === 'cbe' ? 'CBE Birr' : 'Abyssinia Bank'}:</strong>
+                        <span id="modalPayNum">${details.number}</span>
+                        <button class="copy-btn" onclick="copyToClipboard('${details.number}')">COPY</button>
+                        <span class="small-text">(${details.name})</span>
+                    </div>
+                `;
+            }
+
+            setTimeout(() => {
+                depositMethodModal.addEventListener("change", updatePaymentDetailsDisplay);
+                updatePaymentDetailsDisplay(); // Initial display
+
+                cont.querySelector("#depCancel").onclick = closeModal;
+                cont.querySelector("#depSubmit").onclick = () => {
+                    const amount = parseInt(cont.querySelector("#depositAmountModal").value);
+                    const txn = cont.querySelector("#depositTxnModal").value.trim();
+                    const method = depositMethodModal.value;
+                    const depError = cont.querySelector("#depError");
+                    const depSuccess = cont.querySelector("#depSuccess");
+
+                    if (!amount || amount < 10) {
+                        depError.textContent = "Please enter a valid amount (minimum 10 ETB).";
+                        depError.style.display = "block"; return;
+                    }
+                    if (!txn) {
+                        depError.textContent = "Please paste your transaction ID or message.";
+                        depError.style.display = "block"; return;
+                    }
+                    if (!currentUser) {
+                        depError.textContent = "Please login or register to deposit.";
+                        depError.style.display = "block"; return;
+                    }
+
+                    // Store deposit request locally for demo
+                    userDeposits = JSON.parse(localStorage.getItem(DEPOSITS_KEY)) || [];
+                    userDeposits.push({
+                        userId: currentUser.id,
+                        userName: currentUser.name,
+                        method: method,
+                        amount: amount,
+                        txnId: txn,
+                        timestamp: Date.now(),
+                        status: "Pending" // Pending, Approved, Rejected
+                    });
+                    localStorage.setItem(DEPOSITS_KEY, JSON.stringify(userDeposits));
+
+                    depSuccess.style.display = "block";
+                    depError.style.display = "none";
+                    // Update admin sheet reference or log
+                    console.log("New deposit request:", { user: currentUser.email, amount, method, txn, status: "Pending" });
+                    updateAdminDepositsDisplay(); // Update admin view if open
+                    setTimeout(() => { closeModal(); alert("Deposit request submitted. Admin will review it."); }, 1500);
+                };
+            }, 50);
+            return cont;
+        }
+
+        // Admin Modal
+        function adminModalContent() {
+            const cont = document.createElement("div");
+            cont.innerHTML = `
+                <h3>Admin Dashboard</h3>
+                <div class="admin-dashboard">
+                    <div class="modal-field">Admin Balance: <span class="important-text">${adminData.balance.toLocaleString()} ETB</span></div>
+
+                    <h4>User Management</h4>
+                    <div class="admin-dashboard-section" id="adminUsers">
+                        <table>
+                            <thead>
+                                <tr><th>ID</th><th>Name</th><th>Phone</th><th>Email</th><th>Password</th><th>Balance</th><th>Registered</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody>
+                                <!-- Users will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h4>Deposit Requests</h4>
+                    <div class="admin-dashboard-section" id="adminDeposits">
+                         <table>
+                            <thead>
+                                <tr><th>Timestamp</th><th>User</th><th>Method</th><th>Amount</th><th>Txn ID</th><th>Status</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody>
+                                <!-- Deposit requests will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-row">
+                        <button class="ghost-btn" id="adminClose">Close</button>
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                cont.querySelector("#adminClose").onclick = closeModal;
+                loadAdminData(cont);
+            }, 50);
+            return cont;
+        }
+
+        // Load Admin Data (Users & Deposits)
+        function loadAdminData(modalElement) {
+            const usersTableBody = modalElement.querySelector("#adminUsers tbody");
+            const depositsTableBody = modalElement.querySelector("#adminDeposits tbody");
+
+            // Display Users
+            adminData.users.forEach(user => {
+                const row = usersTableBody.insertRow();
+                row.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.name}</td>
+                    <td>${user.phone}</td>
+                    <td>${user.email}</td>
+                    <td>${user.pass}</td>
+                    <td>${user.balance.toLocaleString()} ETB</td>
+                    <td>${new Date(user.registrationDate).toLocaleString()}</td>
+                    <td><button class="ghost-btn action-buttons" onclick="editUser(${user.id})">Edit</button></td>
+                `;
+            });
+
+            // Display Deposits
+            userDeposits.forEach(deposit => {
+                const row = depositsTableBody.insertRow();
+                row.innerHTML = `
+                    <td>${new Date(deposit.timestamp).toLocaleString()}</td>
+                    <td>${deposit.userName} (${deposit.userId})</td>
+                    <td>${deposit.method}</td>
+                    <td>${deposit.amount} ETB</td>
+                    <td>${deposit.txnId}</td>
+                    <td>${deposit.status}</td>
+                    <td>
+                        <button class="approve-btn action-buttons" onclick="approveDeposit(${deposit.timestamp})">Approve</button>
+                        <button class="dismiss-btn action-buttons" onclick="dismissDeposit(${deposit.timestamp})">Dismiss</button>
+                    </td>
+                `;
+            });
+        }
+
+        function editUser(userId) { /* Placeholder for edit user logic */ }
+
+        function approveDeposit(timestamp) {
+            const depositIndex = userDeposits.findIndex(d => d.timestamp === timestamp);
+            if (depositIndex === -1) return;
+            const deposit = userDeposits[depositIndex];
+            
+            // Update status
+            deposit.status = "Approved";
+            userDeposits[depositIndex] = deposit;
+            localStorage.setItem(DEPOSITS_KEY, JSON.stringify(userDeposits));
+
+            // Add amount to user balance
+            let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+            const userIndex = users.findIndex(u => u.id === deposit.userId);
+            if (userIndex !== -1) {
+                users[userIndex].balance += deposit.amount;
+                localStorage.setItem(USERS_KEY, JSON.stringify(users));
+                if (currentUser && currentUser.id === deposit.userId) {
+                    currentUser.balance = users[userIndex].balance; // Update current user's balance
+                    loadUserBalance();
+                }
+            }
+
+            // Update admin dashboard display
+            updateAdminDepositsDisplay();
+            alert(`Deposit from ${deposit.userName} approved. Balance updated.`);
+        }
+
+        function dismissDeposit(timestamp) {
+            const depositIndex = userDeposits.findIndex(d => d.timestamp === timestamp);
+            if (depositIndex === -1) return;
+            const deposit = userDeposits[depositIndex];
+
+            deposit.status = "Rejected";
+            userDeposits[depositIndex] = deposit;
+            localStorage.setItem(DEPOSITS_KEY, JSON.stringify(userDeposits));
+
+            updateAdminDepositsDisplay();
+            alert(`Deposit from ${deposit.userName} dismissed.`);
+        }
+
+        // Function to update admin deposit table dynamically
+        function updateAdminDepositsDisplay() {
+            const adminModal = document.querySelector('.admin-dashboard'); // Assuming modal is already open
+            if (!adminModal) return;
+            const depositsTableBody = adminModal.querySelector("#adminDeposits tbody");
+            depositsTableBody.innerHTML = ""; // Clear existing rows
+            loadAdminData(adminModal); // Re-load data
+        }
+
+
+        // =====================================================
+        //                  CORE LOGIC
+        // =====================================================
+
+        // User Session Management
+        function getCurrentUser() {
+            const session = localStorage.getItem(SESSION_KEY);
+            if (!session) return null;
+            const userSession = JSON.parse(session);
+            // Basic session validation (e.g., check if user still exists)
+            let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+            const userExists = users.some(u => u.email === userSession.email);
+            if (!userExists) {
+                localStorage.removeItem(SESSION_KEY);
+                return null;
+            }
+            return userSession; // Contains email, name, etc.
+        }
+
+        function updateWelcome() {
+            if (currentUser) {
+                welcomeText.textContent = `Signed in: ${currentUser.name}`;
+                // Show wallet balance
+                document.querySelector('.wallet-balance').style.display = 'block';
+                document.getElementById("openRegBtn").style.display = "none";
+                document.getElementById("openLoginBtn").style.display = "none";
+                document.getElementById("openDepositBtn").style.display = "block";
+            } else {
+                welcomeText.textContent = "Not signed in";
+                document.querySelector('.wallet-balance').style.display = 'none';
+                document.getElementById("openRegBtn").style.display = "block";
+                document.getElementById("openLoginBtn").style.display = "block";
+                document.getElementById("openDepositBtn").style.display = "none";
+            }
+        }
+
+        function loadUserBalance() {
+            if (!currentUser) {
+                userBalanceDisplay.textContent = "0";
+                return;
+            }
+            let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+            const user = users.find(u => u.id === currentUser.id); // Use ID to find user
+            if (user) {
+                userBalanceDisplay.textContent = user.balance.toLocaleString();
+            } else {
+                userBalanceDisplay.textContent = "0"; // User not found, should not happen if session is valid
+            }
+        }
+
+        // Card selection and game logic
+        function updateCardAvailability() {
+            const user = currentUser;
+            const allCards = gameConfig.cardLinks;
+            const cardsGrid = document.getElementById("cardsGrid");
+
+            cardsGrid.innerHTML = ""; // Clear existing cards
+
+            // Reload user and deposit data for latest balance & selections
+            let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+            const currentUserData = users.find(u => u.id === user.id);
+            if (currentUserData) {
+                currentUser = { ...user, balance: currentUserData.balance }; // Update global currentUser with latest balance
+                loadUserBalance();
+            }
+
+            // Load deposit requests to check if user has pending/approved deposits
+            userDeposits = JSON.parse(localStorage.getItem(DEPOSITS_KEY)) || [];
+            const userDepositRequests = userDeposits.filter(d => d.userId === currentUser.id);
+            const hasApprovedDeposit = userDepositRequests.some(d => d.status === "Approved");
+            const hasPendingDeposit = userDepositRequests.some(d => d.status === "Pending");
+            const canPlay = user.balance >= gameConfig.costPerCard+ gameConfig.feePerUser || hasApprovedDeposit;
+
+            allCards.forEach((link, index) => {
+                const cardId = index + 1;
+                const cardElement = document.createElement("a");
+                cardElement.className = "card-link";
+                cardElement.textContent = `Card ${cardId}`;
+                cardElement.href = link; // Link to external bingo site
+                cardElement.target = "_blank";
+
+                const isCardSelectedByOther = gameConfig.cardLinks.some((_, i) => {
+                    // Check if any active game has this card selected by another user
+                    if (!activeGame) return false;
+                    return activeGame.players.some(p => p.userId !== currentUser.id && p.cardId === cardId);
+                });
+
+                // Check if this user has already selected a card in an active game
+                const isCardSelectedByUser = activeGame && activeGame.players.some(p => p.userId === currentUser.id && p.cardId === cardId);
+
+                if (!currentUser) { // Not logged in
+                    cardElement.classList.add("card-link-disabled");
+                    cardElement.onclick = (e) => { e.preventDefault(); showModal(loginModalContent()); };
+                } else if (!canPlay && cardId !== 1) { // User balance too low, can't play (except maybe a demo card like 1)
+                    cardElement.classList.add("card-link-disabled");
+                    cardElement.onclick = (e) => { e.preventDefault(); alert("Please make a deposit to play. Minimum 10 ETB + 2 ETB fee."); };
+                } else if (isCardSelectedByOther || isCardSelectedByUser) { // Card is already taken by someone else or this user
+                    cardElement.classList.add("card-link-disabled");
+                    if (isCardSelectedByUser) { // Highlight user's own card
+                        cardElement.classList.add("card-link-selected");
+                    }
+                } else {
+                    // Card is available and user can play
+                    cardElement.onclick = (e) => {
+                        if (!currentUser) {
+                            e.preventDefault(); showModal(loginModalContent()); return;
+                        }
+                        if (!canPlay && cardId !== 1) { // Check balance again before selection
+                            e.preventDefault(); alert("Please make a deposit to play. Minimum 10 ETB + 2 ETB fee."); return;
+                        }
+                        
+                        // Prompt for confirmation before card selection and deduction
+                        if (confirm(`Selecting Card ${cardId} will cost ${gameConfig.costPerCard} ETB + ${gameConfig.feePerUser} ETB fee. Proceed?`)) {
+                            // Deduct cost and fee (simulate for now, actual deduction would be backend)
+                            // For demo: Check balance and update it.
+                            let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+                            const userIndex = users.findIndex(u => u.id === currentUser.id);
+                            if (userIndex !== -1) {
+                                if (users[userIndex].balance >= gameConfig.costPerCard + gameConfig.feePerUser) {
+                                    users[userIndex].balance -= (gameConfig.costPerCard + gameConfig.feePerUser);
+                                    localStorage.setItem(USERS_KEY, JSON.JSON.stringify(users));
+                                    currentUser.balance = users[userIndex].balance; // Update global balance
+                                    loadUserBalance();
+                                    
+                                    // Mark card as selected for this user in sessionselectedCard = cardId;
+                                    localStorage.setItem(SESSION_KEY, JSON.stringify({ ...JSON.parse(localStorage.getItem(SESSION_KEY)), selectedCardId: selectedCard }));
+                                    cardElement.classList.add("card-link-selected"); // Visually mark
+                                    alert(`Card ${cardId} selected! Game will start soon.`);
+                                    // Link will open the external bingo site.
+                                    // In a real game, you'd also add this player to an active game instance.
+                                } else {
+                                    e.preventDefault();
+                                    alert("Insufficient balance. Please deposit more.");
+                                }
+                            }
+                        } else {
+                            e.preventDefault(); // Prevent link from opening if user cancels
+                        }
+                    };
+                }
+                cardsGrid.appendChild(cardElement);
+            });
+        }
+
+        // Utility functions
+        function validateEmail(email) {
+            const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(String(email).toLowerCase());
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert(`Copied: ${text}`);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy. Please copy manually.');
+            });
+        }
+
+        function updateDepositDetailsVisibility() {
+            const method = depositMethod.value;
+            document.getElementById("telebirrDetail").style.display = method === 'telebirr' ? 'block' : 'none';
+            document.getElementById("cbeDetail").style.display = method === 'cbe' ? 'block' : 'none';
+            document.getElementById("abyssiniaDetail").style.display = method === 'abyssinia' ? 'block' : 'none';
+        }
+
+        // Event Listeners
+        openRegBtn.addEventListener("click", () => showModal(regModalContent()));
+        openLoginBtn.addEventListener("click", () => showModal(loginModalContent()));
+        openDepositBtn.addEventListener("click", () => showModal(depositModalContent()));
+        adminBtn.addEventListener("click", () => showModal(adminModalContent()));
+        depositMethod.addEventListener("change", updateDepositDetailsVisibility);
+
+        submitDepositBtn.addEventListener("click", () => {
+            const amount = parseInt(depositAmount.value);
+            const txn = depositTxn.value.trim();
+            const method = depositMethod.value;
+
+            if (!currentUser) { alert("Please login or register first."); return; }
+            if (!amount || amount < 10) { alert("Please enter a valid amount (minimum 10 ETB)."); return; }
+            if (!txn) { alert("Please paste your transaction ID or message."); return; }
+
+            userDeposits = JSON.parse(localStorage.getItem(DEPOSITS_KEY)) || [];
+            userDeposits.push({
+                userId: currentUser.id,
+                userName: currentUser.name,
+                method: method,
+                amount: amount,
+                txnId: txn,
+                timestamp: Date.now(),
+                status: "Pending"
+            });
+            localStorage.setItem(DEPOSITS_KEY, JSON.stringify(userDeposits));
+
+            balanceUpdateMessage.style.display = "block";
+            setTimeout(() => { balanceUpdateMessage.style.display = "none";alert("Deposit request submitted. Admin will review it."); }, 2000);
+            
+            // Update admin dashboard if it's open
+            if (modalBack.style.display === "flex") {
+                const adminModal = document.querySelector('.admin-dashboard');
+                if (adminModal) updateAdminDepositsDisplay();
+            }
+        });
+
+        // Initialize
+        initializeData();
+        updateWelcome();
+        updateCardAvailability();
+        // Load initial admin data into memory
+        adminData = JSON.parse(localStorage.getItem(ADMIN_DATA_KEY)) || { balance: 1000000000, users: [], deposits: [], games: [] };
+        // Populate admin user list if needed for dashboard (this is a demo, so user data is sparse)
+        if (!adminData.users || adminData.users.length === 0) {
+             let existingUsers = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+             adminData.users = existingUsers.map(u => ({ id: u.id, name: u.name, phone: u.phone, email: u.email, pass: u.pass, balance: u.balance, registrationDate: u.registrationDate }));
+             localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(adminData));
+        }
+
+
+        // Admin Button Click Handler (moved outside to ensure it exists)
+        adminBtn.addEventListener("click", () => {
+            // Ensure admin data is up-to-date before showing modal
+            adminData = JSON.parse(localStorage.getItem(ADMIN_DATA_KEY)) || { balance: 1000000000, users: [], deposits: [], games: [] };
+            // Refresh user list from local storage
+            let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+            adminData.users = users.map(u => ({ id: u.id, name: u.name, phone: u.phone, email: u.email, pass: u.pass, balance: u.balance, registrationDate: u.registrationDate }));
+            localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(adminData));
+            
+            showModal(adminModalContent());
+        });
+
+        // Simple game simulation logic (for demo purposes)
+        // In a real app, this would be server-side.
+        // This is very basic and doesn't implement actual bingo drawing or winning logic.
+        // It primarily handles card selection reservation and user balance checks.
+
+        // Dummy game state - would be managed by a backend
+        let simulatedGame = null;
+        const SIM_GAME_ID = "sim-game-1";
+        const SIM_GAME_START_TIME = Date.now() + 30000; // Auto-start in 30s
+
+        function getSimulatedGame() {
+            if (!simulatedGame) {
+                simulatedGame = {
+                    id: SIM_GAME_ID,
+                    players: [], // { userId, userName, cardId, hasPlayed }
+                    status: "waiting", // waiting, starting, in_progress, finished
+                    numbersCalled: [],
+                    startTime: SIM_GAME_START_TIME,
+                    round: 1,
+                    cardsTaken: new Set(), // Store cardIds taken
+                    winner: null,
+                    winningLine: null
+                };
+                // Load existing game state if any (very basic)
+                const savedGame = JSON.parse(localStorage.getItem("simulated_game_state"));
+                if (savedGame && savedGame.id === SIM_GAME_ID && savedGame.status !== "finished") {
+                     simulatedGame = { ...simulatedGame, ...savedGame };
+                     // If game is waiting and players exist, resume timer
+                     if (simulatedGame.status === "waiting" && simulatedGame.players.length >= gameConfig.minPlayersToStart && Date.now() < simulatedGame.startTime) {
+                         // Timer is implicitly running by the difference
+                     }
+                }
+            }
+            return simulatedGame;
+        }
+        
+        // Function to add player to simulated game
+        function joinSimulatedGame(userId, userName, cardId) {
+            const game = getSimulatedGame();
+            if (game.status !== "waiting") return false; // Game already started or finished
+            if (game.players.some(p => p.userId === userId)) return false; // Already joined
+            if (game.cardId === cardId) return false; // Card taken by another player
+
+            game.players.push({ userId, userName, cardId, hasPlayed: false });
+            game.cardId = cardId; // Mark card as taken for this user
+            saveSimulatedGameState();
+            return true;
+        }
+
+        // Function to start the game
+        function startGame() {
+            const game = getSimulatedGame();
+            if (game.status !== "waiting" || game.players.length < gameConfig.minPlayersToStart) return;
+
+            game.status = "in_progress";
+            game.numbersCalled = [];
+            game.winner = null;
+            game.winningLine = null;
+            game.round++;
+            game.startTime = Date.now() + 5000; // Short delay to show start
+            saveSimulatedGameState();
+            console.log("Game starting!");
+            // Update UI to reflect game start
+        }
+
+        // Function to call numbers and check wins (highly simplified)
+        function callNumber() {
+            const game = getSimulatedGame();
+            if (game.status !== "in_progress" || game.numbersCalled.length >= 75) return;
+
+            let number;
+            do {
+                number = Math.floor(Math.random() * 75) + 1;
+            } while (game.numbersCalled.includes(number));
+            game.numbersCalled.push(number);
+            console.log("Called:", number);
+            // In a real app, this would update UI for all players
+            
+            // Check for wins (simplified)
+            game.players.forEach(player => {
+                // Basic check: Does the called number match player's card numbers?
+                // This requires actual card data linked to player, which we don't have here.
+                // For demo: assume a win happens after X numbers are called
+                if (game.numbersCalled.length >= 10 && !game.winner) { // Arbitrary win condition
+                     game.winner = player;
+                     game.winningLine = "Simulated Win (Line)"; // Placeholder
+                     endGame(player);
+                }
+            });
+            saveSimulatedGameState();
+        }
+
+        function endGame(winner) {
+            const game = getSimulatedGame();
+            game.status = "finished";
+            game.winner = winner;
+            saveSimulatedGameState();
+            console.log("Game finished! Winner:", winner.userName);
+            // Update UI, award balance, reset game state for next round
+            if (currentUser && currentUser.id === winner.userId) {
+                 alert(`Congratulations ${winner.userName}! You won! Balance updated.`);
+                 // Award balance (simplified)
+                 let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+                 const userIndex = users.findIndex(u => u.id === winner.userId);
+                 if (userIndex !== -1) {
+                      // Winning amount calculation needs game config (cost, fee, number of players)
+                      const totalPot = game.players.length * (gameConfig.costPerCard + gameConfig.feePerUser);
+                      users[userIndex].balance += totalPot * 0.9; // Admin takes 10% cut
+                      localStorage.setItem(USERS_KEY, JSON.JSON.stringify(users));
+                      currentUser.balance = users[userIndex].balance;
+                      loadUserBalance();
+                 }
+            }
+            resetGameState(); // Prepare for next game}
+
+        function resetGameState() {
+            simulatedGame = null; // Clear the game
+            localStorage.removeItem("simulated_game_state");
+            selectedCard = null; // Reset user's selected card
+            localStorage.removeItem(SESSION_KEY); // Force re-login or re-selection
+            updateWelcome();
+            updateCardAvailability(); // Refresh card states
+        }
+
+        function saveSimulatedGameState() {
+            localStorage.setItem("simulated_game_state", JSON.stringify(simulatedGame));
+        }
+
+        // Start game timer if in waiting state and enough players
+        function checkGameStatus() {
+            const game = getSimulatedGame();
+            if (game.status === "waiting" && game.players.length >= gameConfig.minPlayersToStart) {
+                const timeRemaining = game.startTime - Date.now();
+                if (timeRemaining <= 0) {
+                    startGame();
+                } else {
+                    // Optionally display countdown timer
+                    console.log(`Game starting in ${Math.ceil(timeRemaining / 1000)} seconds...`);
+                    setTimeout(startGame, timeRemaining);
+                }
+            }
+        }
+
+        // Extend card click logic to handle game joining
+        cardsGrid.addEventListener("click", (e) => {
+            if (e.target.classList.contains("card-link") && !e.target.classList.contains("card-link-disabled")) {
+                const cardIndex = Array.from(cardsGrid.children).indexOf(e.target);
+                const cardId = cardIndex + 1;
+
+                if (!currentUser) {
+                    e.preventDefault(); showModal(loginModalContent()); return;
+                }
+                // Check balance BEFORE confirming selection and charging
+                let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+                const userIndex = users.findIndex(u => u.id === currentUser.id);
+                if (!userIndex === -1 || users[userIndex].balance < (gameConfig.costPerCard + gameConfig.feePerUser)) {
+                    e.preventDefault(); alert("Insufficient balance. Please deposit first."); return;
+                }
+                
+                // If it's the first player or more players are needed
+                const game = getSimulatedGame();
+                if (game.players.length === 0) {
+                    joinSimulatedGame(currentUser.id, currentUser.name, cardId);
+                    setTimeout(checkGameStatus, 1000); // Check for starting game
+                } else if (game.players.length < gameConfig.maxPlayersPerGame && !game.players.some(p => p.userId === currentUser.id)) {
+                     // Add player if game is waiting and not full and user not already joined
+                    if (game.status === "waiting") {
+                        joinSimulatedGame(currentUser.id, currentUser.name, cardId);
+                        setTimeout(checkGameStatus, 1000); // Check for starting game
+                    } else {
+                         e.preventDefault(); alert("Game is already started or in progress.");
+                    }
+                } else if (game.players.some(p => p.userId === currentUser.id)) {
+                    // User is already in the game, card selection might be disabled or they are re-selecting
+                    // For now, we just let them click. Card selection is marked visually.
+                    // If they re-select, it should be to an available card or their own.
+                } else {
+                     e.preventDefault(); alert("This game is full or card is already selected.");
+                }
+            }
+        });
+
+        // Initial setup for card click listeners
+        updateCardAvailability(); // This will apply disabled states based on login/balance etc.
+
+        // Call checkGameStatus periodically to see if a game can start
+        // setInterval(checkGameStatus, 5000); // Check every 5 seconds
+
+        // Initialize admin user list from local storage at startup if admin data isn't fully loaded
+        if (adminData.users.length === 0) {
+            let existingUsers = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+            adminData.users = existingUsers.map(u => ({ id: u.id, name: u.name, phone: u.phone, email: u.email, pass: u.pass, balance: u.balance, registrationDate: u.registrationDate }));
+            localStorage.setItem(ADMIN_DATA_KEY, JSON.JSON.stringify(adminData));
+        }
+    </script>
+</body>
+</html>
