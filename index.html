@@ -1,264 +1,64 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Oliyad Bingo — Play to Earn</title>
-  <style>
-    body { font-family: Arial, Helvetica, sans-serif; padding: 16px; background:#f6f8fa; }
-    header { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
-    button { padding:8px 12px; cursor:pointer; border-radius:6px; border:1px solid #ccc; background:white; }
-    #status { margin-top:8px; font-size:0.95rem; color:#333; }
-    #board { margin-top:16px; display:grid; gap:6px; grid-template-columns:repeat(5,64px); }
-    .cell { width:64px;height:64px;background:white;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer;border:1px solid #ddd; user-select:none;}
-    .marked { background:#3b82f6;color:white;border-color:#2563eb;}
-    .free { background:#efefef; color:#666; font-weight:700; }
-    #controls { margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    #adminPanel { margin-top:12px; background:#fff;padding:8px;border-radius:8px;border:1px solid #e5e7eb; display:none; }
-    pre { white-space:pre-wrap; word-wrap:break-word; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oliyad Bingo - Multiplayer & Wallet</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Oliyad Bingo — Play to Earn</h1>
+    <div class="header-bar">
+        <div class="user-info">ID: <span id="userIdDisplay">---</span></div>
+        <div class="wallet-info">Balance: <span id="balanceDisplay">0</span> ETB</div>
+        <div class="nav-btns">
+            <button onclick="showModal('depositModal')">Deposit</button>
+            <button onclick="showModal('withdrawModal')">Withdraw</button>
+        </div>
+    </div>
+<div class="game-container">
+        <h1>OLIYAD BINGO</h1>
+        <div class="multiplayer-status">
+            <span id="playerCount">Searching for players...</span>
+        </div>
 
-  <header>
-    <button id="btn-register">Registration</button>
-    <button id="btn-login">Login</button>
-    <button id="btn-deposit">Manual Deposit</button>
-    <button id="btn-admin">Admin</button>
-    <button id="btn-submit">Submit Request</button>
-    <button id="btn-copy">Copy Text</button>
-    <button id="btn-newboard">New Board</button>
-    <button id="btn-reset">Reset Marks</button>
-  </header>
+        <div class="status-panel">
+            <div id="currentNumber">--</div>
+            <button id="drawBtn" disabled>Draw Number (50 ETB)</button>
+        </div>
 
-  <div id="status">Not logged in.</div>
-
-  <div id="controls">
-    <div id="balance">Balance: 0</div>
-  </div>
-
-  <div id="board" aria-label="Bingo board"></div>
-
-  <div id="adminPanel"></div>
-
-  <script>
-    // Simple client-side state in localStorage (replace with server calls as needed)
-    const LS_USERS = 'oliyad_users';
-    const LS_CURRENT = 'oliyad_current';
-    const LS_REQUESTS = 'oliyad_requests';
-
-    // Utilities
-    function loadJSON(key, def) {
-      try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch(e){ return def; }
-    }
-    function saveJSON(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
-
-    // Initialize storage defaults
-    if (!localStorage.getItem(LS_USERS)) {
-      saveJSON(LS_USERS, { admin:{ password: 'admin123', balance: 0 } });
-    }
-    if (!localStorage.getItem(LS_REQUESTS)) saveJSON(LS_REQUESTS, []);
-    if (!localStorage.getItem(LS_CURRENT)) localStorage.removeItem(LS_CURRENT);
-
-    // UI elements
-    const statusEl = document.getElementById('status');
-    const balanceEl = document.getElementById('balance');
-    const adminPanel = document.getElementById('adminPanel');
-
-    function updateStatusUI() {
-      const current = localStorage.getItem(LS_CURRENT);
-      if (!current) {
-        statusEl.textContent = 'Not logged in.';
-        balanceEl.textContent = 'Balance: 0';
-      } else {
-        const users = loadJSON(LS_USERS, {});
-        const user = users[current] || { balance:0 };
-        statusEl.textContent = `Logged in as ${current}`;
-        balanceEl.textContent = `Balance: ${user.balance ?? 0}`;
-      }
-    }
-
-    updateStatusUI();
-
-    // Registration
-    document.getElementById('btn-register').addEventListener('click', () => {
-      const username = prompt('Choose a username (no spaces):')?.trim();
-      if (!username) return alert('Registration cancelled.');
-      const password = prompt('Choose a password:') ?? '';
-      const users = loadJSON(LS_USERS, {});
-      if (users[username]) return alert('User exists. Please login or choose another username.');
-      users[username] = { password, balance: 0 };
-      saveJSON(LS_USERS, users);
-      alert('Registered. You can now log in.');
-    });
-
-    // Login
-    document.getElementById('btn-login').addEventListener('click', () => {
-      const username = prompt('Username:')?.trim();
-      if (!username) return;
-      const password = prompt('Password:') ?? '';
-      const users = loadJSON(LS_USERS, {});
-      const u = users[username];
-      if (!u || u.password !== password) return alert('Invalid credentials.');
-      localStorage.setItem(LS_CURRENT, username);
-      updateStatusUI();
-      alert('Login successful.');
-    });
-
-    // Manual Deposit
-    document.getElementById('btn-deposit').addEventListener('click', () => {
-      const current = localStorage.getItem(LS_CURRENT);
-      if (!current) return alert('Please login first.');
-      const amountStr = prompt('Enter deposit amount (number):', '10');
-      const amount = Number(amountStr);
-      if (!amount || amount <= 0) return alert('Invalid amount.');
-      const users = loadJSON(LS_USERS, {});
-      users[current].balance = (users[current].balance || 0) + amount;
-      saveJSON(LS_USERS, users);
-      updateStatusUI();
-      alert(`Deposited ${amount} to ${current}.`);
-    });
-
-    // Submit Request
-    document.getElementById('btn-submit').addEventListener('click', () => {
-      const current = localStorage.getItem(LS_CURRENT) || 'guest';
-      const text = prompt('Enter your request or message:');
-      if (!text) return alert('Cancelled.');
-      const requests = loadJSON(LS_REQUESTS, []);
-      requests.push({ from: current, text, at: new Date().toISOString() });
-      saveJSON(LS_REQUESTS, requests);
-      alert('Request submitted.');
-      // If you have a backend, replace the line above with a fetch() call to send the request to your server.
-    });
-
-    // Admin
-    document.getElementById('btn-admin').addEventListener('click', () => {
-      const pw = prompt('Admin password:');
-      if (!pw) return;
-      // Very simple check: look for admin in users
-      const users = loadJSON(LS_USERS, {});
-      const admin = users.admin;
-      if (!admin || admin.password !== pw) return alert('Incorrect admin password.');
-      renderAdmin(users, loadJSON(LS_REQUESTS, []));
-    });
-
-    function renderAdmin(users, requests) {
-      adminPanel.style.display = 'block';
-      adminPanel.innerHTML = '';
-      const h = document.createElement('div');
-      h.innerHTML = '<strong>Admin panel</strong>';
-      adminPanel.appendChild(h);
-
-      const uList = document.createElement('pre');
-      uList.textContent = 'Users:\n' + Object.entries(users).map(([k,v]) => `${k} — balance: ${v.balance ?? 0}`).join('\n');
-      adminPanel.appendChild(uList);
-
-      const rList = document.createElement('pre');
-      rList.textContent = 'Requests:\n' + (requests.length ? requests.map(r => `${r.at} — ${r.from}: ${r.text}`).join('\n') : 'No requests.');
-      adminPanel.appendChild(rList);
-
-      const clearBtn = document.createElement('button');
-      clearBtn.textContent = 'Clear Requests';
-      clearBtn.addEventListener('click', () => { if(confirm('Clear all requests?')) { saveJSON(LS_REQUESTS, []); adminPanel.style.display='none'; alert('Cleared.'); }});
-      adminPanel.appendChild(clearBtn);
-    }
-
-    // Copy text (template)
-    document.getElementById('btn-copy').addEventListener('click', async () => {
-      const sample = `Hin Dalagan Template Qofa Bana Malee Bingon koo Dalaga hin Jiru\n(Translation: They don’t work, only the template opens, but my Bingo doesn’t function.)`;
-      try {
-        await navigator.clipboard.writeText(sample);
-        alert('Template text copied to clipboard.');
-      } catch (e) {
-        alert('Copy failed — your browser may restrict clipboard access. Here is the text:\n\n' + sample);
-      }
-    });
-
-    // Bingo board logic
-    const boardEl = document.getElementById('board');
-    let cells = []; // {num, el, marked}
-
-    function newBingoBoard() {
-      boardEl.innerHTML = '';
-      cells = [];
-      // Generate 25 unique numbers from 1..75, center is free
-      const pool = Array.from({length:75}, (_,i)=>i+1);
-      // shuffle pool
-      for (let i = pool.length -1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]];}
-      const nums = pool.slice(0,25);
-      for (let i=0;i<25;i++) {
-        const div = document.createElement('div');
-        div.className = 'cell';
-        const num = nums[i];
-        if (i === 12) { // center cell free
-          div.classList.add('free','marked');
-          div.textContent = 'FREE';
-          cells.push({ num: 'FREE', el: div, marked: true });
-        } else {
-          div.textContent = num;
-          cells.push({ num, el: div, marked: false });
-          div.addEventListener('click', () => {
-            const c = cells[i];
-            c.marked = !c.marked;
-            c.el.classList.toggle('marked', c.marked);
-            checkBingo();
-          });
-        }
-        boardEl.appendChild(div);
-      }
-    }
-
-    function resetMarks() {
-      for (let i=0;i<cells.length;i++) {
-        if (i===12) continue;
-        cells[i].marked = false;
-        cells[i].el.classList.remove('marked');
-      }
-    }
-
-    // Check rows, cols, diags
-    function checkBingo() {
-      const gridMarked = Array.from({length:5}, (_,r) => Array.from({length:5}, (_,c) => cells[r*5+c].marked));
-      // rows
-      for (let r=0;r<5;r++) {
-        if (gridMarked[r].every(Boolean)) return alertWin('row', r);
-      }
-      // cols
-      for (let c=0;c<5;c++) {
-        if ([0,1,2,3,4].every(r=>gridMarked[r][c])) return alertWin('col', c);
-      }
-      // diag TL-BR
-      if ([0,1,2,3,4].every(i=>gridMarked[i][i])) return alertWin('diag TL-BR', null);
-      // diag TR-BL
-      if ([0,1,2,3,4].every(i=>gridMarked[i][4-i])) return alertWin('diag TR-BL', null);
-    }
-
-    let alerted = false;
-    function alertWin(type, idx) {
-      if (alerted) return;
-      alerted = true;
-      const current = localStorage.getItem(LS_CURRENT) || 'guest';
-      alert(`BINGO! (${type}${idx!==null?` ${idx+1}`:''}) — Congratulations ${current}`);
-      // Award a small prize (demo): add to balance
-      const users = loadJSON(LS_USERS, {});
-      if (users[current]) {
-        users[current].balance = (users[current].balance || 0) + 50;
-        saveJSON(LS_USERS, users);
-        updateStatusUI();
-        alert('Awarded 50 to your account (demo).');
-      }
-    }
-
-    // New board and Reset handlers
-    document.getElementById('btn-newboard').addEventListener('click', () => { alerted=false; newBingoBoard(); });
-    document.getElementById('btn-reset').addEventListener('click', () => { resetMarks(); alerted=false; });
-
-    // Create first board
-    newBingoBoard();
-
-    // Helpful note for debugging
-    console.log('Oliyad Bingo loaded. Use the buttons to Register/Login/Deposit/Admin/Submit/Copy text. Bingo board is interactive.');
-  </script>
+        <div class="bingo-board" id="board"></div>
+        <div id="message"></div>
+        <button id="resetBtn">Reset Board</button>
+    </div>
+<!-- Deposit Modal -->
+    <div id="depositModal" class="modal">
+        <div class="modal-content">
+            <h2>DEPOSIT FUNDS</h2>
+            <div class="payment-methods">
+                <p><strong>Telebirr / CBE Birr:</strong> 0967692398</p>
+                <p><strong>CBE Bank:</strong> 1000438187937</p>
+                <p><strong>Name:</strong> Oliyad Tefera</p>
+            </div>
+            <p style="font-size: 0.8rem; color: #aaa;">Paste your SMS confirmation message below for automatic verification:</p>
+            <textarea id="smsPasteArea" placeholder="Paste Telebirr or CBE message here..."></textarea>
+            <button onclick="verifyTransaction()">Verify Transaction</button>
+            <button class="close-btn" onclick="hideModal('depositModal')">Cancel</button>
+        </div>
+    </div>
+<!-- Withdraw Modal -->
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <h2>WITHDRAW FUNDS</h2>
+            <input type="number" id="withdrawAmount" placeholder="Amount ETB">
+            <select id="withdrawMethod">
+                <option value="telebirr">Telebirr</option>
+                <option value="cbe">CBE Bank</option>
+            </select>
+            <input type="text" id="withdrawAccount" placeholder="Phone or Account Number">
+            <button onclick="processWithdrawal()">Submit Request</button>
+            <button class="close-btn" onclick="hideModal('withdrawModal')">Cancel</button>
+        </div>
+    </div>
+<script src="script.js"></script>
 </body>
-</html>
+              </html>
