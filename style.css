@@ -1,0 +1,71 @@
+body {
+    background-color: #0c0c0c;
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.header-bar {
+    width: 100%;
+    background: #1a1a1a;
+    padding: 15px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #d4af37;
+    box-sizing: border-box;
+}
+.user-info, .wallet-info {
+    color: #d4af37;
+    font-weight: bold;
+}
+.game-container {
+    margin-top: 30px;
+background: #151515;
+    padding: 30px;
+    border-radius: 20px;
+    border: 1px solid #d4af37;
+    text-align: center;
+    width: 90%;
+    max-width: 500px;
+}
+h1 { color: #d4af37; letter-spacing: 4px; margin: 0; }
+.multiplayer-status { font-size: 0.8rem; color: #00ff00; margin: 10px 0; }
+.status-panel { display: flex; align-items: center; justify-content: center; gap: 20px; margin: 20px 0; }
+#currentNumber {
+    width: 70px; height: 70px; border-radius: 50%;
+    background: #d4af37; color: #000;
+    line-height: 70px; font-size: 2rem; font-weight: bold;
+}
+bingo-board {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 8px; margin: 20px 0;
+}
+.cell {
+    aspect-ratio: 1; background: #222; border: 1px solid #444;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 1.1rem;
+}
+.cell.marked { background: #d4af37; color: #000; font-weight: bold; }
+.cell.free { background: #b8860b; font-size: 0.7rem; }
+button {
+    background: #d4af37; border: none; padding: 10px 15px;
+    color: #000; font-weight: bold; cursor: pointer; border-radius: 5px;
+}
+button:disabled { background: #555; cursor: not-allowed; }
+.modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9); z-index: 100;
+}
+.modal-content {
+    background: #1a1a1a; width: 80%; max-width: 400px;
+    margin: 100px auto; padding: 25px; border: 2px solid #d4af37; border-radius: 15px;
+}
+textarea, input, select {
+    width: 100%; margin: 10px 0; padding: 10px;
+    background: #000; border: 1px solid #d4af37; color: #fff; box-sizing: border-box;
+}
+.close-btn { background: #ff4444; color: #fff; margin-top: 5px; }
+
