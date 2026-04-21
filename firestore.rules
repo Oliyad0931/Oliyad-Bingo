@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Disallow client writes to tokens and sensitive fields; only Cloud Functions or admin SDK should modify tokens.
+      allow write: if false;
+    }
+
+    match /games/{gameId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.hostUid == request.auth.uid;
+      // allow updates only for game host (client) or server (functions)
+      allow update: if request.auth != null && request.auth.uid == resource.data.hostUid;
+    }
+
+    match /games/{gameId}/players/{playerId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      // allow players to update their own non-sensitive fields
+      allow update: if request.auth != null && request.auth.uid == resource.data.uid
+        && !(request.resource.data.keys().hasAny(['hasClaimedWin']));
+    }
+
+    match /transactions/{tx} {
+      allow read: if request.auth != null;
+      allow write: if false; // server only
+    }
+  }
+}
