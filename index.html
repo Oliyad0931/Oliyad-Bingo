@@ -6,20 +6,44 @@
   <title>Oliyad Bingo — Card Select & Rooms</title>
   <link rel="icon" href="data:;base64,=" />
   <style>
-    body { font-family: Arial, sans-serif; padding: 1rem; max-width:900px; margin:auto }
+    :root{
+      --gold:#d4af37; /* golden */
+      --bg:#ffffff; /* white */
+      --fg:#000000; /* black */
+    }
+    body { font-family: Arial, sans-serif; padding: 1rem; max-width:900px; margin:auto; background:linear-gradient(180deg,var(--bg),#f8f7f6); color:var(--fg)}
+    header { display:flex;align-items:center;justify-content:space-between }
+    h1 { color:var(--gold); margin:0 }
     #card { display: grid; gap: 6px; margin-bottom: 1rem; }
-    .cell { width: 60px; height: 60px; display:flex;align-items:center;justify-content:center;
-           border:1px solid #ccc;border-radius:6px;cursor:pointer; user-select:none; }
-    .cell.selected { background:#4CAF50;color:white; }
+    .cell { width: 56px; height: 56px; display:flex;align-items:center;justify-content:center;
+           border:2px solid var(--gold);border-radius:8px;cursor:pointer; user-select:none; background:#fff;color:var(--fg); font-weight:600 }
+    .cell.selected { background:var(--gold); color:#fff; }
     #players { margin-top: 1rem; }
-    .controls { margin-bottom:1rem; }
-    input[type="text"], select { padding:6px; }
-    button { padding:6px 10px; margin-left:6px; }
-    #status { margin-top: 0.5rem; color:#333 }
+    .controls { margin-bottom:1rem; display:flex;gap:8px; flex-wrap:wrap }
+    input[type="text"], input[type="tel"], select { padding:8px; border:1px solid #ddd; border-radius:6px }
+    button { padding:8px 12px; margin-left:6px; background:var(--gold); border:none; color:#000; font-weight:700; border-radius:6px; cursor:pointer }
+    .muted { color:#666; font-size:0.9rem }
+    .room { padding:8px; border:1px solid #eee; border-radius:8px; background:#fff }
+    .numbers-called { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px }
+    .num { padding:6px 8px; border-radius:6px; background:#fafafa; border:1px solid #ddd }
+    .gold-highlight { color:var(--gold); font-weight:800 }
+    .deposit { display:flex; gap:8px; align-items:center }
+    .copy-btn { padding:6px 8px; background:#eee; border-radius:6px; cursor:pointer }
+    @media (max-width:600px){ .cell{width:46px;height:46px} }
   </style>
 </head>
 <body>
-  <h1>Oliyad Bingo — Card selection & Rooms</h1>
+  <header>
+    <h1>Oliyad Bingo</h1>
+    <div class="muted">Play to Earn — Theme: Gold & Black</div>
+  </header>
+
+  <section class="controls" id="authSection">
+    <input id="phone" type="tel" placeholder="Phone (e.g. 09XXXXXXXX)" />
+    <input id="displayName" placeholder="Your name" />
+    <button id="registerBtn">Register / Login</button>
+    <div id="userInfo" class="muted"></div>
+  </section>
 
   <div class="controls">
     <label for="size">Card size:</label>
@@ -36,18 +60,37 @@
     <div id="card"></div>
   </div>
 
-  <div class="controls">
-    <input id="name" placeholder="Your name" />
+  <div class="controls room">
+    <input id="name" placeholder="Player display name (override)" />
     <button id="createRoomBtn" disabled>Create room</button>
-
     <input id="roomIdInput" placeholder="Room ID to join" />
     <button id="joinRoomBtn" disabled>Join room</button>
+    <button id="startBtn" disabled>Start Game (30s)</button>
+    <div id="status" class="muted"></div>
   </div>
 
-  <div id="status"></div>
-
-  <div id="players"><strong>Players in room:</strong>
+  <div class="room">
+    <strong>Players in room:</strong>
     <ul id="playerList"></ul>
+    <div id="countdown" class="gold-highlight"></div>
+    <div><strong>Numbers called:</strong>
+      <div class="numbers-called" id="calledNumbers"></div>
+    </div>
+  </div>
+
+  <div class="room" style="margin-top:12px">
+    <strong>Deposit / Payment</strong>
+    <div class="deposit">
+      <div>
+        TELEBIRR: <span id="telebirr">0931517482</span>
+        <button class="copy-btn" data-copy="0931517482">Copy</button>
+      </div>
+      <div>
+        CBE Account: <span id="cbe">1000438187937</span>
+        <button class="copy-btn" data-copy="1000438187937">Copy</button>
+      </div>
+    </div>
+    <div class="muted">Please deposit and then register the transaction with admin before game payout.</div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>

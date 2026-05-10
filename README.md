@@ -1,21 +1,24 @@
-# Oliyad Bingo — Card Selection & Rooms (demo)
+# Oliyad Bingo — Card Selection, Rooms & Game (extended)
 
-This adds a minimal demo to generate Bingo cards (numbers 1–100), select a card, and create/join playing rooms using Socket.io.
+This update adds:
+- Registration / login by phone (simple in-memory demo)
+- Create / join rooms (requires login)
+- Start game with 30s countdown; game draws numbers 1..75 randomly and emits them every 5s
+- UI theme gold / white / black
+- Deposit/payment info (TELEBIRR and CBE account) with Copy buttons
 
-Files added:
-- index.html — frontend UI
-- script.js — frontend logic
-- server.js — minimal Node/Express + Socket.io server
-- package.json — dependencies and start script
-- README.md — quick instructions
+Files changed/added:
+- index.html (updated UI and theme)
+- script.js (registration, start, number calls, copy)
+- server.js (register/login, start countdown, draw logic)
+- package.json unchanged
 
-Quick start (run locally):
-1. Ensure Node.js (16+) is installed.
-2. In the repository root run:
-   npm install
-   npm start
-3. Open http://localhost:3000 in your browser.
+Run locally:
+1. npm install
+2. npm start
+3. Open http://localhost:3000
 
 Notes:
-- Rooms are stored in memory and will reset when the server restarts.
-- This is a demo scaffold. Add persistence, authentication, and game logic (calling numbers, marking cards, win detection) as next steps.
+- All data (users, rooms) stored in memory for demo purposes.
+- The register/login is a simple phone-based flow (no SMS). For production, integrate an SMS gateway or proper auth.
+- Payment details shown are for convenience; secure handling and verification are required for real money flows.
