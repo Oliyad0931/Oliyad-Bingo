@@ -1,124 +1,150 @@
-let balance = 0;
-let myId = "OLI-" + Math.floor(1000 + Math.random() * 9000);
-let drawnNumbers = new Set();
-let markedIndices = new Set([12]);
-let boardNumbers = [];
+// Client logic for Bingo card selection and room creation/joining
+// Place this file next to index.html
+(() => {
+  const cardEl = document.getElementById('card');
+  const generateBtn = document.getElementById('generateBtn');
+  const selectBtn = document.getElementById('selectBtn');
+  const createRoomBtn = document.getElementById('createRoomBtn');
+  const joinRoomBtn = document.getElementById('joinRoomBtn');
+  const roomIdInput = document.getElementById('roomIdInput');
+  const status = document.getElementById('status');
+  const playerList = document.getElementById('playerList');
+  const nameInput = document.getElementById('name');
+  const sizeSelect = document.getElementById('size');
 
-const balanceDisplay = document.getElementById('balanceDisplay');
-const userIdDisplay = document.getElementById('userIdDisplay');
-const drawBtn = document.getElementById('drawBtn');
+  let currentCard = null;
+  let selectedCard = null;
+  let socket = null;
+  let currentRoomId = null;
 
-// Initialize Game
-window.onload = () => {
-    userIdDisplay.innerText = myId;
-    simulatePlayers();
-    generateBoard();
-};
-
-function showModal(id) { document.getElementById(id).style.display = 'block'; }
-function hideModal(id) { document.getElementById(id).style.display = 'none'; }
-
-function simulatePlayers() {
-    const players = ["User_99", "Abebe_Eth", "Bini_Bingo", "Sara_K", "Oliyad_Pro"];
-    document.getElementById('playerCount').innerText = `Multiplayer: ${players.length} Players Online`;
-    drawBtn.disabled = false;
-}
-
-function verifyTransaction() {
-    const sms = document.getElementById('smsPasteArea').value;
-    if (sms.includes("received") || sms.includes("Transferred") || sms.includes("Confirmed")) {
-        let amountMatch = sms.match(/\d+(\.\d+)?(?=\s*ETB)/);
-        let amount = amountMatch ? parseFloat(amountMatch[0]) : 100;
-
-        balance += amount;
-      updateUI();
-        alert(`Success! ${amount} ETB added to ID: ${myId}`);
-        hideModal('depositModal');
-        document.getElementById('smsPasteArea').value = "";
-    } else {
-        alert("Invalid Transaction SMS. Please copy the full message.");
+  function randUniqueCount(min, max, count) {
+    const pool = [];
+    for (let i = min; i <= max; i++) pool.push(i);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-}
+    return pool.slice(0, count);
+  }
 
-function processWithdrawal() {
-    const amount = parseFloat(document.getElementById('withdrawAmount').value);
-    if (amount > balance) {
-        alert("Insufficient Balance!");
-    } else if (amount >= 50) {
-        balance -= amount;
-        updateUI();
-alert(`Withdrawal of ${amount} ETB to ${document.getElementById('withdrawAccount').value} is processing...`);
-        hideModal('withdrawModal');
-    } else {
-        alert("Minimum withdrawal is 50 ETB");
+  function generateCard(size = 5, min = 1, max = 100) {
+    const total = size * size;
+    const nums = randUniqueCount(min, max, total);
+    const grid = [];
+    for (let r = 0; r < size; r++) {
+      const row = [];
+      for (let c = 0; c < size; c++) {
+        row.push(nums[r * size + c]);
+      }
+      grid.push(row);
     }
-}
+    return grid;
+  }
 
-function updateUI() {
-    balanceDisplay.innerText = balance;
-}
+  function renderCard(grid) {
+    const size = grid.length;
+    cardEl.style.gridTemplateColumns = `repeat(${size}, 60px)`;
+    cardEl.innerHTML = '';
+    grid.forEach((row, r) => {
+      row.forEach((val, c) => {
+        const div = document.createElement('div');
+        div.className = 'cell';
+        div.dataset.r = r;
+        div.dataset.c = c;
+        div.textContent = val;
+        div.addEventListener('click', () => {
+          div.classList.toggle('selected');
+        });
+        cardEl.appendChild(div);
+      });
+    });
+  }
 
-function generateBoard() {
-    const board = document.getElementById('board');
-    board.innerHTML = '';
-    let pool = Array.from({length: 75}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
-    boardNumbers = pool.slice(0, 25);
-     
-  for (let i = 0; i < 25; i++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        if (i === 12) {
-            cell.innerText = "FREE";
-            cell.classList.add('marked', 'free');
-        } else {
-            cell.innerText = boardNumbers[i];
-            cell.onclick = () => {
-                if (drawnNumbers.has(boardNumbers[i])) {
-                    cell.classList.add('marked');
-                    markedIndices.add(i);
-                    checkWin();
-                }
-            };
-        }
-        board.appendChild(cell);
+  generateBtn.addEventListener('click', () => {
+    const size = parseInt(sizeSelect.value, 10);
+    currentCard = generateCard(size, 1, 100);
+    renderCard(currentCard);
+    selectBtn.disabled = false;
+    status.textContent = 'Card generated. Click "Select this card" to choose it.';
+  });
+
+  selectBtn.addEventListener('click', () => {
+    if (!currentCard) return;
+    selectedCard = currentCard;
+    selectBtn.disabled = true;
+    createRoomBtn.disabled = false;
+    joinRoomBtn.disabled = false;
+    status.textContent = 'Card selected. Now create or join a room.';
+  });
+
+  async function createRoom() {
+    if (!selectedCard) { status.textContent = 'Select a card first.'; return; }
+    const playerName = nameInput.value || 'Player';
+    const res = await fetch('/rooms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card: selectedCard, playerName }),
+    });
+    const body = await res.json();
+    if (!res.ok) {
+      status.textContent = 'Create room failed: ' + (body.error || res.statusText);
+      return;
     }
+    currentRoomId = body.roomId;
+    status.textContent = `Room created: ${currentRoomId}. Connected.`;
+    connectSocket(currentRoomId, playerName);
+    roomIdInput.value = currentRoomId;
+  }
+
+  async function joinRoom() {
+    if (!selectedCard) { status.textContent = 'Select a card first.'; return; }
+    const roomId = roomIdInput.value.trim();
+    if (!roomId) { status.textContent = 'Enter a room ID to join.'; return; }
+    const playerName = nameInput.value || 'Player';
+    const res = await fetch(`/rooms/${encodeURIComponent(roomId)}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card: selectedCard, playerName }),
+    });
+    const body = await res.json();
+    if (!res.ok) {
+      status.textContent = 'Join room failed: ' + (body.error || res.statusText);
+      return;
     }
+    currentRoomId = roomId;
+    status.textContent = `Joined room ${roomId}. Connected.`;
+    connectSocket(roomId, playerName);
+  }
 
-drawBtn.onclick = () => {
-    if (balance < 50) {
-        alert("Need 50 ETB to Draw!");
-        return;
-    }
-    balance -= 50;
-    updateUI();
+  function connectSocket(roomId, playerName) {
+    if (socket) socket.disconnect();
+    socket = io({ query: { roomId, playerName } });
+    socket.on('connect', () => {
+      console.log('socket connected');
+    });
+    socket.on('room-update', (room) => {
+      updatePlayerList(room);
+    });
+    socket.on('player-joined', (p) => {
+      status.textContent = `${p.playerName} joined the room`;
+    });
+    socket.on('disconnect', () => {
+      console.log('socket disconnected');
+    });
+  }
 
-    let num;
-    do { num = Math.floor(Math.random() * 75) + 1; } while (drawnNumbers.has(num));
-    drawnNumbers.add(num);
-    document.getElementById('currentNumber').innerText = num;
-};
+  function updatePlayerList(room) {
+    playerList.innerHTML = '';
+    (room.players || []).forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = `${p.playerName} (${p.id})`;
+      playerList.appendChild(li);
+    });
+  }
 
-function checkWin() {
-    const wins = [
-      [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],
-        [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],
-        [0,6,12,18,24],[4,8,12,16,20]
-    ];
-    for (let p of wins) {
-        if (p.every(idx => markedIndices.has(idx))) {
-            document.getElementById('message').innerText = "BINGO! +500 ETB";
-            balance += 500;
-            updateUI();
-            drawBtn.disabled = true;
-        }
-    }
-          }
+  createRoomBtn.addEventListener('click', createRoom);
+  joinRoomBtn.addEventListener('click', joinRoom);
 
-document.getElementById('resetBtn').onclick = () => {
-    drawnNumbers.clear();
-    markedIndices = new Set([12]);
-    document.getElementById('currentNumber').innerText = "--";
-    document.getElementById('message').innerText = "";
-    drawBtn.disabled = false;
-    generateBoard();
-};
+  // Auto-generate initial card on load
+  generateBtn.click();
+})();

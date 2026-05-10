@@ -1,64 +1,56 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oliyad Bingo - Multiplayer & Wallet</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Oliyad Bingo — Card Select & Rooms</title>
+  <link rel="icon" href="data:;base64,=" />
+  <style>
+    body { font-family: Arial, sans-serif; padding: 1rem; max-width:900px; margin:auto }
+    #card { display: grid; gap: 6px; margin-bottom: 1rem; }
+    .cell { width: 60px; height: 60px; display:flex;align-items:center;justify-content:center;
+           border:1px solid #ccc;border-radius:6px;cursor:pointer; user-select:none; }
+    .cell.selected { background:#4CAF50;color:white; }
+    #players { margin-top: 1rem; }
+    .controls { margin-bottom:1rem; }
+    input[type="text"], select { padding:6px; }
+    button { padding:6px 10px; margin-left:6px; }
+    #status { margin-top: 0.5rem; color:#333 }
+  </style>
 </head>
 <body>
-    <div class="header-bar">
-        <div class="user-info">ID: <span id="userIdDisplay">---</span></div>
-        <div class="wallet-info">Balance: <span id="balanceDisplay">0</span> ETB</div>
-        <div class="nav-btns">
-            <button onclick="showModal('depositModal')">Deposit</button>
-            <button onclick="showModal('withdrawModal')">Withdraw</button>
-        </div>
-    </div>
-<div class="game-container">
-        <h1>OLIYAD BINGO</h1>
-        <div class="multiplayer-status">
-            <span id="playerCount">Searching for players...</span>
-        </div>
+  <h1>Oliyad Bingo — Card selection & Rooms</h1>
 
-        <div class="status-panel">
-            <div id="currentNumber">--</div>
-            <button id="drawBtn" disabled>Draw Number (50 ETB)</button>
-        </div>
+  <div class="controls">
+    <label for="size">Card size:</label>
+    <select id="size">
+      <option value="5" selected>5×5</option>
+      <option value="4">4×4</option>
+      <option value="3">3×3</option>
+    </select>
+    <button id="generateBtn">Generate Card</button>
+    <button id="selectBtn" disabled>Select this card</button>
+  </div>
 
-        <div class="bingo-board" id="board"></div>
-        <div id="message"></div>
-        <button id="resetBtn">Reset Board</button>
-    </div>
-<!-- Deposit Modal -->
-    <div id="depositModal" class="modal">
-        <div class="modal-content">
-            <h2>DEPOSIT FUNDS</h2>
-            <div class="payment-methods">
-                <p><strong>Telebirr / CBE Birr:</strong> 0967692398</p>
-                <p><strong>CBE Bank:</strong> 1000438187937</p>
-                <p><strong>Name:</strong> Oliyad Tefera</p>
-            </div>
-            <p style="font-size: 0.8rem; color: #aaa;">Paste your SMS confirmation message below for automatic verification:</p>
-            <textarea id="smsPasteArea" placeholder="Paste Telebirr or CBE message here..."></textarea>
-            <button onclick="verifyTransaction()">Verify Transaction</button>
-            <button class="close-btn" onclick="hideModal('depositModal')">Cancel</button>
-        </div>
-    </div>
-<!-- Withdraw Modal -->
-    <div id="withdrawModal" class="modal">
-        <div class="modal-content">
-            <h2>WITHDRAW FUNDS</h2>
-            <input type="number" id="withdrawAmount" placeholder="Amount ETB">
-            <select id="withdrawMethod">
-                <option value="telebirr">Telebirr</option>
-                <option value="cbe">CBE Bank</option>
-            </select>
-            <input type="text" id="withdrawAccount" placeholder="Phone or Account Number">
-            <button onclick="processWithdrawal()">Submit Request</button>
-            <button class="close-btn" onclick="hideModal('withdrawModal')">Cancel</button>
-        </div>
-    </div>
-<script src="script.js"></script>
+  <div id="cardContainer">
+    <div id="card"></div>
+  </div>
+
+  <div class="controls">
+    <input id="name" placeholder="Your name" />
+    <button id="createRoomBtn" disabled>Create room</button>
+
+    <input id="roomIdInput" placeholder="Room ID to join" />
+    <button id="joinRoomBtn" disabled>Join room</button>
+  </div>
+
+  <div id="status"></div>
+
+  <div id="players"><strong>Players in room:</strong>
+    <ul id="playerList"></ul>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
 </body>
-              </html>
+</html>
