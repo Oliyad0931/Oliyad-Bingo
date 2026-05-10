@@ -20,7 +20,7 @@
     .cell.selected { background:var(--gold); color:#fff; }
     #players { margin-top: 1rem; }
     .controls { margin-bottom:1rem; display:flex;gap:8px; flex-wrap:wrap }
-    input[type="text"], input[type="tel"], select { padding:8px; border:1px solid #ddd; border-radius:6px }
+    input[type="text"], input[type="tel"], input[type="password"], select { padding:8px; border:1px solid #ddd; border-radius:6px }
     button { padding:8px 12px; margin-left:6px; background:var(--gold); border:none; color:#000; font-weight:700; border-radius:6px; cursor:pointer }
     .muted { color:#666; font-size:0.9rem }
     .room { padding:8px; border:1px solid #eee; border-radius:8px; background:#fff }
@@ -40,8 +40,10 @@
 
   <section class="controls" id="authSection">
     <input id="phone" type="tel" placeholder="Phone (e.g. 09XXXXXXXX)" />
+    <input id="password" type="password" placeholder="Strong password (min 8 chars)" />
     <input id="displayName" placeholder="Your name" />
-    <button id="registerBtn">Register / Login</button>
+    <button id="registerBtn">Register</button>
+    <button id="loginBtn">Login</button>
     <div id="userInfo" class="muted"></div>
   </section>
 
@@ -79,7 +81,15 @@
   </div>
 
   <div class="room" style="margin-top:12px">
-    <strong>Deposit / Payment</strong>
+    <strong>Deposit / Withdraw</strong>
+    <div style="margin:8px 0">
+      <input id="txAmount" placeholder="Amount (Birr)" />
+      <select id="txMethod"><option>TELEBIRR</option><option>CBE</option></select>
+      <input id="txRef" placeholder="Reference (e.g., tx id or note)" />
+      <button id="depositBtn">Deposit (create)</button>
+      <button id="withdrawBtn">Withdraw (request)</button>
+    </div>
+
     <div class="deposit">
       <div>
         TELEBIRR: <span id="telebirr">0931517482</span>

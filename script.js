@@ -1,4 +1,4 @@
-// Client logic for Bingo with registration, start countdown, number draws, and copy buttons
+// Client logic for Bingo with registration (phone+password), login, deposit/withdraw and JWT auth
 (() => {
   const cardEl = document.getElementById('card');
   const generateBtn = document.getElementById('generateBtn');
@@ -12,17 +12,25 @@
   const nameInput = document.getElementById('name');
   const sizeSelect = document.getElementById('size');
   const phoneInput = document.getElementById('phone');
+  const passwordInput = document.getElementById('password');
   const displayNameInput = document.getElementById('displayName');
   const registerBtn = document.getElementById('registerBtn');
+  const loginBtn = document.getElementById('loginBtn');
   const userInfo = document.getElementById('userInfo');
   const countdownEl = document.getElementById('countdown');
   const calledNumbersEl = document.getElementById('calledNumbers');
+  const depositBtn = document.getElementById('depositBtn');
+  const withdrawBtn = document.getElementById('withdrawBtn');
+  const txAmount = document.getElementById('txAmount');
+  const txMethod = document.getElementById('txMethod');
+  const txRef = document.getElementById('txRef');
 
   let currentCard = null;
   let selectedCard = null;
   let socket = null;
   let currentRoomId = null;
   let currentUser = null; // {id, phone, name}
+  let token = null;
 
   function randUniqueCount(min, max, count) {
     const pool = [];
@@ -84,31 +92,52 @@
     status.textContent = 'Card selected. Now create or join a room.';
   });
 
-  registerBtn.addEventListener('click', async () => {
-    const phone = phoneInput.value.trim();
-    const name = displayNameInput.value.trim() || 'Player';
-    if (!phone) { userInfo.textContent = 'Enter phone number.'; return; }
-    // call register endpoint
-    const res = await fetch('/register', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ phone, name }) });
-    const body = await res.json();
-    if (!res.ok) { userInfo.textContent = body.error || 'Register failed'; return; }
-    currentUser = body.user;
+  function setAuth(u, t) {
+    currentUser = u;
+    token = t;
     localStorage.setItem('bingoUser', JSON.stringify(currentUser));
+    localStorage.setItem('bingoToken', token);
     userInfo.textContent = `Logged in: ${currentUser.name} (${currentUser.phone})`;
     createRoomBtn.disabled = !selectedCard;
     joinRoomBtn.disabled = !selectedCard;
+  }
+
+  registerBtn.addEventListener('click', async () => {
+    const phone = phoneInput.value.trim();
+    const name = displayNameInput.value.trim() || 'Player';
+    const password = passwordInput.value;
+    if (!phone || !password) { userInfo.textContent = 'Enter phone and strong password.'; return; }
+    const res = await fetch('/register', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ phone, name, password }) });
+    const body = await res.json();
+    if (!res.ok) { userInfo.textContent = body.error || 'Register failed'; return; }
+    // auto-login
+    const loginRes = await fetch('/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ phone, password }) });
+    const loginBody = await loginRes.json();
+    if (!loginRes.ok) { userInfo.textContent = 'Register succeeded but login failed'; return; }
+    setAuth(loginBody.user, loginBody.token);
+  });
+
+  loginBtn.addEventListener('click', async () => {
+    const phone = phoneInput.value.trim();
+    const password = passwordInput.value;
+    if (!phone || !password) { userInfo.textContent = 'Enter phone and password.'; return; }
+    const res = await fetch('/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ phone, password }) });
+    const body = await res.json();
+    if (!res.ok) { userInfo.textContent = body.error || 'Login failed'; return; }
+    setAuth(body.user, body.token);
   });
 
   // load user from storage
   const saved = localStorage.getItem('bingoUser');
-  if (saved) { currentUser = JSON.parse(saved); userInfo.textContent = `Logged in: ${currentUser.name} (${currentUser.phone})`; }
+  const savedToken = localStorage.getItem('bingoToken');
+  if (saved && savedToken) { currentUser = JSON.parse(saved); token = savedToken; userInfo.textContent = `Logged in: ${currentUser.name} (${currentUser.phone})`; createRoomBtn.disabled = !selectedCard; joinRoomBtn.disabled = !selectedCard; }
 
   async function createRoom() {
     if (!selectedCard) { status.textContent = 'Select a card first.'; return; }
-    if (!currentUser) { status.textContent = 'Register/login first.'; return; }
+    if (!currentUser || !token) { status.textContent = 'Register/login first.'; return; }
     const playerName = nameInput.value || currentUser.name;
     const res = await fetch('/rooms', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ card: selectedCard, playerName, userId: currentUser.id }),
     });
     const body = await res.json();
@@ -116,37 +145,38 @@
     currentRoomId = body.roomId;
     roomIdInput.value = currentRoomId;
     status.textContent = `Room created: ${currentRoomId}. Connected.`;
-    connectSocket(currentRoomId, playerName);
+    connectSocket(currentRoomId);
     startBtn.disabled = false;
   }
 
   async function joinRoom() {
     if (!selectedCard) { status.textContent = 'Select a card first.'; return; }
-    if (!currentUser) { status.textContent = 'Register/login first.'; return; }
+    if (!currentUser || !token) { status.textContent = 'Register/login first.'; return; }
     const roomId = roomIdInput.value.trim();
     if (!roomId) { status.textContent = 'Enter a room ID to join.'; return; }
     const playerName = nameInput.value || currentUser.name;
     const res = await fetch(`/rooms/${encodeURIComponent(roomId)}/join`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ card: selectedCard, playerName, userId: currentUser.id }),
     });
     const body = await res.json();
     if (!res.ok) { status.textContent = 'Join room failed: ' + (body.error || res.statusText); return; }
     currentRoomId = roomId;
     status.textContent = `Joined room ${roomId}. Connected.`;
-    connectSocket(roomId, playerName);
+    connectSocket(roomId);
     startBtn.disabled = false;
   }
 
   async function startGame() {
     if (!currentRoomId) { status.textContent = 'Join a room first.'; return; }
-    const res = await fetch(`/rooms/${encodeURIComponent(currentRoomId)}/start`, { method: 'POST' });
+    if (!token) { status.textContent = 'Login required.'; return; }
+    const res = await fetch(`/rooms/${encodeURIComponent(currentRoomId)}/start`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
     const body = await res.json();
     if (!res.ok) { status.textContent = 'Start failed: ' + (body.error || res.statusText); return; }
     status.textContent = 'Game starting...';
   }
 
-  function connectSocket(roomId, playerName) {
+  function connectSocket(roomId) {
     if (socket) socket.disconnect();
     socket = io({ query: { roomId } });
     socket.on('connect', () => { console.log('socket connected'); });
@@ -172,6 +202,31 @@
     calledNumbersEl.appendChild(el);
   }
 
+  // deposit/withdraw
+  depositBtn.addEventListener('click', async () => {
+    if (!token) { status.textContent = 'Login required.'; return; }
+    const amount = Number(txAmount.value);
+    const method = txMethod.value;
+    const reference = txRef.value || '';
+    if (!amount || amount <= 0) { status.textContent = 'Enter valid amount.'; return; }
+    const res = await fetch('/transactions/deposit', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ amount, method, reference }) });
+    const body = await res.json();
+    if (!res.ok) { status.textContent = body.error || 'Deposit request failed'; return; }
+    status.textContent = 'Deposit request created (pending admin approval).';
+  });
+
+  withdrawBtn.addEventListener('click', async () => {
+    if (!token) { status.textContent = 'Login required.'; return; }
+    const amount = Number(txAmount.value);
+    const method = txMethod.value;
+    const reference = txRef.value || '';
+    if (!amount || amount <= 0) { status.textContent = 'Enter valid amount.'; return; }
+    const res = await fetch('/transactions/withdraw', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ amount, method, reference }) });
+    const body = await res.json();
+    if (!res.ok) { status.textContent = body.error || 'Withdraw request failed'; return; }
+    status.textContent = 'Withdraw request created (pending admin approval).';
+  });
+
   // copy buttons
   document.addEventListener('click', (e) => {
     const b = e.target.closest('.copy-btn');
@@ -185,7 +240,6 @@
   joinRoomBtn.addEventListener('click', joinRoom);
   startBtn.addEventListener('click', startGame);
 
-  // enable buttons accordingly
   // auto-generate initial card on load
   generateBtn.click();
 })();

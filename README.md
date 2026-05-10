@@ -1,24 +1,27 @@
-# Oliyad Bingo — Card Selection, Rooms & Game (extended)
+# Oliyad Bingo — Backend for registration, deposits, and withdrawals
 
-This update adds:
-- Registration / login by phone (simple in-memory demo)
-- Create / join rooms (requires login)
-- Start game with 30s countdown; game draws numbers 1..75 randomly and emits them every 5s
-- UI theme gold / white / black
-- Deposit/payment info (TELEBIRR and CBE account) with Copy buttons
+What I implemented
+- Registration with phone + strong password (hashed using bcryptjs)
+- Login endpoint returning JWT (jsonwebtoken)
+- Persistent storage for users and transactions using JSON files in /data (data/users.json, data/transactions.json)
+- Deposit and Withdraw endpoints that create pending transactions
+- Admin endpoints to view users and transactions and approve/reject transactions (admin login uses ADMIN_PASSWORD env var)
+- Updated client to use JWT for auth, show deposit/withdraw UI, and auto-login after register
 
-Files changed/added:
-- index.html (updated UI and theme)
-- script.js (registration, start, number calls, copy)
-- server.js (register/login, start countdown, draw logic)
-- package.json unchanged
-
-Run locally:
-1. npm install
-2. npm start
+How to run
+1. Install dependencies:
+   npm install
+2. Start server:
+   JWT_SECRET and ADMIN_PASSWORD can be set as environment variables. Example:
+   JWT_SECRET=replace_this ADMIN_PASSWORD=secret npm start
 3. Open http://localhost:3000
 
-Notes:
-- All data (users, rooms) stored in memory for demo purposes.
-- The register/login is a simple phone-based flow (no SMS). For production, integrate an SMS gateway or proper auth.
-- Payment details shown are for convenience; secure handling and verification are required for real money flows.
+Admin flow
+- POST /admin/login with { "password": "<ADMIN_PASSWORD>" } to get an admin token
+- Use the admin token in Authorization: Bearer <token> to call /admin/users, /admin/transactions, /admin/transactions/:id/approve
+
+Notes and next steps
+- This is still a demo. JSON file storage is fine for testing but switch to a real DB (Postgres, MySQL, MongoDB, Redis) for production to handle concurrency and scalability.
+- Add SMS OTP verification for phone-based registration for better security.
+- Add HTTPS and secure cookie handling for tokens in production.
+- Add server-side validation and rate-limiting.
