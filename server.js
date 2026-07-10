@@ -14,6 +14,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Import casino routes
+const casinoRoutes = require('./routes/casino');
+
 // Paths for data
 const DATA_DIR = path.join(__dirname, 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
@@ -41,7 +44,18 @@ app.use(express.static('.'));
 
 // Auth helpers
 function generateToken(payload){ return jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' }); }
-function authMiddleware(req,res,next){ const h = req.headers.authorization; if(!h) return res.status(401).json({error:'missing token'}); const parts = h.split(' '); if(parts.length!==2) return res.status(401).json({error:'invalid auth header'}); const token = parts[1]; try{ const decoded = jwt.verify(token, JWT_SECRET); req.user = decoded; next(); }catch(e){ return res.status(401).json({error:'invalid token'}); } }
+function authMiddleware(req,res,next){ 
+  const h = req.headers.authorization; 
+  if(!h) return res.status(401).json({error:'missing token'}); 
+  const parts = h.split(' '); 
+  if(parts.length!==2) return res.status(401).json({error:'invalid token format'}); 
+  try { 
+    req.user = jwt.verify(parts[1], JWT_SECRET); 
+    next(); 
+  } catch(e){ 
+    res.status(401).json({error:'invalid token'}); 
+  } 
+}
 function adminMiddleware(req,res,next){ if(!req.user || req.user.role!=='admin') return res.status(403).json({error:'admin required'}); next(); }
 
 // Register
@@ -56,7 +70,7 @@ app.post('/register', (req, res) => {
   if (existing) return res.status(400).json({ error: 'phone already registered' });
   const id = uuidv4();
   const hash = bcrypt.hashSync(password, 10);
-  const user = { id, phone, name: name || 'Player', passwordHash: hash, balance: 0, createdAt: new Date().toISOString() };
+  const user = { id, phone, name: name || 'Player', passwordHash: hash, balance: 100, createdAt: new Date().toISOString() };
   users[id] = user;
   writeUsers(users);
   // return limited user
@@ -253,7 +267,11 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {});
 });
 
+// ============ CASINO ROUTES ============
+app.use('/api/casino', authMiddleware, casinoRoutes);
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Bingo server listening on port ${PORT}`);
+  console.log(`Casino games available at http://localhost:${PORT}/casino.html`);
 });
