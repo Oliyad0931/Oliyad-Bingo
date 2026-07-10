@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oliyad Casino - Play to Earn</title>
+  <link rel="stylesheet" href="casino-style.css">
+</head>
+<body>
+  <div class="casino-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <h1>🎰 OLIYAD CASINO</h1>
+        <p>Play to Earn Money</p>
+      </div>
+      <div class="header-right">
+        <div class="user-info">
+          <span id="userName" class="user-name">Guest</span>
+          <span id="userBalance" class="user-balance">💰 0 ETB</span>
+        </div>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="game-tabs">
+      <button class="tab-btn active" data-game="dice">🎲 Dice</button>
+      <button class="tab-btn" data-game="slots">🎡 Slots</button>
+      <button class="tab-btn" data-game="cardflip">🎴 Card Flip</button>
+      <button class="tab-btn" data-game="roulette">🎯 Roulette</button>
+      <button class="tab-btn" data-game="coinflip">💰 Coin Flip</button>
+      <button class="tab-btn" data-game="bingo">🎯 Bingo</button>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="game-content">
+      <!-- DICE GAME -->
+      <div class="game-panel active" id="dice-game">
+        <h2>🎲 Lucky Dice</h2>
+        <p class="game-desc">Roll the dice and win! Predict the outcome and multiply your bet.</p>
+        
+        <div class="game-board">
+          <div class="dice-display">
+            <div class="dice" id="dice1">1</div>
+            <div class="dice" id="dice2">1</div>
+          </div>
+          
+          <div class="controls">
+            <div class="bet-section">
+              <label>Bet Amount (ETB):</label>
+              <input type="number" id="diceBet" min="10" max="5000" value="100" placeholder="Enter bet">
+            </div>
+            
+            <div class="prediction">
+              <label>Predict Sum:</label>
+              <div class="prediction-buttons">
+                <button class="predict-btn" data-value="low">Low (2-7)</button>
+                <button class="predict-btn" data-value="high">High (8-12)</button>
+              </div>
+            </div>
+            
+            <button class="roll-btn" id="diceRollBtn">ROLL DICE</button>
+            
+            <div class="game-result" id="diceResult"></div>
+          </div>
+        </div>
+        
+        <div class="game-stats">
+          <h3>Your Stats</h3>
+          <p>Dice Games Played: <span id="diceGamesPlayed">0</span></p>
+          <p>Total Winnings: <span id="diceTotalWinnings">0 ETB</span></p>
+        </div>
+      </div>
+
+      <!-- SLOTS GAME -->
+      <div class="game-panel" id="slots-game">
+        <h2>🎡 Classic Slots</h2>
+        <p class="game-desc">Spin to win! Match symbols to multiply your winnings.</p>
+        
+        <div class="game-board">
+          <div class="slots-container">
+            <div class="slot" id="slot1">🍎</div>
+            <div class="slot" id="slot2">🍎</div>
+            <div class="slot" id="slot3">🍎</div>
+          </div>
+          
+          <div class="controls">
+            <div class="bet-section">
+              <label>Bet Amount (ETB):</label>
+              <input type="number" id="slotsBet" min="10" max="5000" value="100" placeholder="Enter bet">
+            </div>
+            
+            <button class="spin-btn" id="slotsSpinBtn">SPIN SLOTS</button>
+            
+            <div class="paylines">
+              <p>🍎🍎🍎 = 5x</p>
+              <p>🌟🌟🌟 = 10x</p>
+              <p>💎💎💎 = 20x</p>
+              <p>🎰🎰🎰 = JACKPOT (100x)</p>
+            </div>
+            
+            <div class="game-result" id="slotsResult"></div>
+          </div>
+        </div>
+        
+        <div class="game-stats">
+          <h3>Your Stats</h3>
+          <p>Slots Games Played: <span id="slotsGamesPlayed">0</span></p>
+          <p>Total Winnings: <span id="slotsTotalWinnings">0 ETB</span></p>
+        </div>
+      </div>
+
+      <!-- CARD FLIP GAME -->
+      <div class="game-panel" id="cardflip-game">
+        <h2>🎴 Card Flip</h2>
+        <p class="game-desc">Guess if the next card is Higher or Lower!</p>
+        
+        <div class="game-board">
+          <div class="cards-display">
+            <div class="card current-card" id="currentCard">
+              <span>?</span>
+            </div>
+          </div>
+          
+          <div class="controls">
+            <div class="bet-section">
+              <label>Bet Amount (ETB):</label>
+              <input type="number" id="cardBet" min="10" max="5000" value="100" placeholder="Enter bet">
+            </div>
+            
+            <div class="prediction">
+              <label>Next Card Will Be:</label>
+              <div class="prediction-buttons">
+                <button class="predict-btn" data-value="higher">HIGHER ⬆️</button>
+                <button class="predict-btn" data-value="lower">LOWER ⬇️</button>
+              </div>
+            </div>
+            
+            <button class="play-btn" id="cardFlipBtn">FLIP CARD</button>
+            
+            <div class="game-result" id="cardFlipResult"></div>
+          </div>
+        </div>
+        
+        <div class="game-stats">
+          <h3>Your Stats</h3>
+          <p>Card Flip Games Played: <span id="cardGamesPlayed">0</span></p>
+          <p>Total Winnings: <span id="cardTotalWinnings">0 ETB</span></p>
+        </div>
+      </div>
+
+      <!-- ROULETTE GAME -->
+      <div class="game-panel" id="roulette-game">
+        <h2>🎯 Roulette</h2>
+        <p class="game-desc">Spin the roulette wheel and win big!</p>
+        
+        <div class="game-board">
+          <div class="roulette-display">
+            <div class="roulette-wheel" id="rouletteWheel">
+              <div class="roulette-ball"></div>
+            </div>
+          </div>
+          
+          <div class="controls">
+            <div class="bet-section">
+              <label>Bet Amount (ETB):</label>
+              <input type="number" id="rouletteBet" min="10" max="5000" value="100" placeholder="Enter bet">
+            </div>
+            
+            <div class="prediction">
+              <label>Choose Color:</label>
+              <div class="prediction-buttons">
+                <button class="predict-btn red" data-value="red">🔴 RED (2x)</button>
+                <button class="predict-btn black" data-value="black">⚫ BLACK (2x)</button>
+                <button class="predict-btn green" data-value="green">🟢 GREEN (14x)</button>
+              </div>
+            </div>
+            
+            <button class="spin-btn" id="rouletteSpinBtn">SPIN WHEEL</button>
+            
+            <div class="game-result" id="rouletteResult"></div>
+          </div>
+        </div>
+        
+        <div class="game-stats">
+          <h3>Your Stats</h3>
+          <p>Roulette Games Played: <span id="rouletteGamesPlayed">0</span></p>
+          <p>Total Winnings: <span id="rouletteTotalWinnings">0 ETB</span></p>
+        </div>
+      </div>
+
+      <!-- COIN FLIP GAME -->
+      <div class="game-panel" id="coinflip-game">
+        <h2>💰 Coin Flip</h2>
+        <p class="game-desc">Classic 50/50 chance - Pick Heads or Tails!</p>
+        
+        <div class="game-board">
+          <div class="coin-display" id="coinDisplay">
+            <div class="coin">
+              <div class="coin-front">HEADS</div>
+              <div class="coin-back">TAILS</div>
+            </div>
+          </div>
+          
+          <div class="controls">
+            <div class="bet-section">
+              <label>Bet Amount (ETB):</label>
+              <input type="number" id="coinBet" min="10" max="5000" value="100" placeholder="Enter bet">
+            </div>
+            
+            <div class="prediction">
+              <label>Choose Side:</label>
+              <div class="prediction-buttons">
+                <button class="predict-btn" data-value="heads">HEADS 👑</button>
+                <button class="predict-btn" data-value="tails">TAILS 🪙</button>
+              </div>
+            </div>
+            
+            <button class="flip-btn" id="coinFlipBtn">FLIP COIN</button>
+            
+            <div class="game-result" id="coinFlipResult"></div>
+          </div>
+        </div>
+        
+        <div class="game-stats">
+          <h3>Your Stats</h3>
+          <p>Coin Flip Games Played: <span id="coinGamesPlayed">0</span></p>
+          <p>Total Winnings: <span id="coinTotalWinnings">0 ETB</span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wallet Section -->
+    <footer class="wallet-section">
+      <div class="wallet-controls">
+        <button class="action-btn" id="depositBtn">💵 Deposit</button>
+        <button class="action-btn" id="withdrawBtn">💸 Withdraw</button>
+        <button class="action-btn" id="backBtn">🏠 Back to Bingo</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modals -->
+  <div class="modal" id="depositModal">
+    <div class="modal-content">
+      <span class="close-btn" data-modal="depositModal">&times;</span>
+      <h2>💵 Deposit Funds</h2>
+      <div class="payment-info">
+        <p><strong>Telebirr:</strong> 0931517482</p>
+        <p><strong>CBE Bank:</strong> 1000438187937</p>
+        <p><strong>Name:</strong> Oliyad Tefera</p>
+      </div>
+      <input type="number" id="depositAmount" placeholder="Amount (ETB)" min="50">
+      <textarea id="depositRef" placeholder="Enter transaction reference/SMS message"></textarea>
+      <button class="modal-btn" id="confirmDepositBtn">Confirm Deposit</button>
+    </div>
+  </div>
+
+  <div class="modal" id="withdrawModal">
+    <div class="modal-content">
+      <span class="close-btn" data-modal="withdrawModal">&times;</span>
+      <h2>💸 Withdraw Funds</h2>
+      <input type="number" id="withdrawAmount" placeholder="Amount (ETB)" min="50">
+      <input type="tel" id="withdrawPhone" placeholder="Phone/Account Number">
+      <select id="withdrawMethod">
+        <option>Telebirr</option>
+        <option>CBE Bank</option>
+        <option>Other</option>
+      </select>
+      <button class="modal-btn" id="confirmWithdrawBtn">Submit Request</button>
+    </div>
+  </div>
+
+  <script src="casino-script.js"></script>
+</body>
+</html>
