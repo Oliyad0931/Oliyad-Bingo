@@ -24,6 +24,7 @@
   const txAmount = document.getElementById('txAmount');
   const txMethod = document.getElementById('txMethod');
   const txRef = document.getElementById('txRef');
+  const authSection = document.getElementById('authSection');
 
   let currentCard = null;
   let selectedCard = null;
@@ -97,9 +98,12 @@
     token = t;
     localStorage.setItem('bingoUser', JSON.stringify(currentUser));
     localStorage.setItem('bingoToken', token);
+    localStorage.setItem('userBalance', u.balance);
     userInfo.textContent = `Logged in: ${currentUser.name} (${currentUser.phone})`;
+    authSection.style.display = 'none'; // Hide auth section after login
     createRoomBtn.disabled = !selectedCard;
     joinRoomBtn.disabled = !selectedCard;
+    document.getElementById('casinoLink').style.display = 'inline-block'; // Show casino link
   }
 
   registerBtn.addEventListener('click', async () => {
@@ -115,6 +119,9 @@
     const loginBody = await loginRes.json();
     if (!loginRes.ok) { userInfo.textContent = 'Register succeeded but login failed'; return; }
     setAuth(loginBody.user, loginBody.token);
+    phoneInput.value = '';
+    passwordInput.value = '';
+    displayNameInput.value = '';
   });
 
   loginBtn.addEventListener('click', async () => {
@@ -125,12 +132,22 @@
     const body = await res.json();
     if (!res.ok) { userInfo.textContent = body.error || 'Login failed'; return; }
     setAuth(body.user, body.token);
+    phoneInput.value = '';
+    passwordInput.value = '';
   });
 
   // load user from storage
   const saved = localStorage.getItem('bingoUser');
   const savedToken = localStorage.getItem('bingoToken');
-  if (saved && savedToken) { currentUser = JSON.parse(saved); token = savedToken; userInfo.textContent = `Logged in: ${currentUser.name} (${currentUser.phone})`; createRoomBtn.disabled = !selectedCard; joinRoomBtn.disabled = !selectedCard; }
+  if (saved && savedToken) { 
+    currentUser = JSON.parse(saved); 
+    token = savedToken; 
+    userInfo.textContent = `Logged in: ${currentUser.name} (${currentUser.phone})`; 
+    authSection.style.display = 'none'; // Hide auth section if already logged in
+    createRoomBtn.disabled = !selectedCard;
+    joinRoomBtn.disabled = !selectedCard;
+    document.getElementById('casinoLink').style.display = 'inline-block'; // Show casino link
+  }
 
   async function createRoom() {
     if (!selectedCard) { status.textContent = 'Select a card first.'; return; }
